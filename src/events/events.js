@@ -41,6 +41,79 @@ function rainbowColor(t) {
   return new THREE.Color().setHSL(t, 1.0, 0.6);
 }
 
+// ─── Congratulations milestone event (triggered at exactly 30 clicks) ────────
+export const congratsEvent = {
+  id: 'congratulations_30',
+  name: 'CONGRATULATIONS ON 30 CLICKS!',
+  play(scene, camera) {
+    const room = scene.getObjectByName('room');
+    const ambient = scene.getObjectByName('ambientLight');
+    const origRoomColor = room ? room.material.color.clone() : null;
+    const origAmbientColor = ambient ? ambient.color.clone() : null;
+    const origAmbientInt = ambient ? ambient.intensity : 0.6;
+
+    let active = true;
+    let hue = 0;
+
+    function flash() {
+      if (!active) return;
+      hue = (hue + 0.08) % 1;
+      if (room) room.material.color.setHSL(hue, 0.8, 0.7);
+      if (ambient) { ambient.color.setHSL((hue + 0.5) % 1, 0.8, 0.6); ambient.intensity = 1.5; }
+      setTimeout(flash, 80);
+    }
+    flash();
+
+    // Four dancing cats
+    const cats = [];
+    [[-3, -3], [3, -3], [-3, 3], [3, 3]].forEach(([cx, cz]) => {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({ color: 0xff8800 });
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), mat);
+      g.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.38, 10, 10), mat);
+      head.position.set(0, 0.75, 0);
+      g.add(head);
+      const earGeo = new THREE.ConeGeometry(0.13, 0.28, 8);
+      const earL = new THREE.Mesh(earGeo, mat);
+      earL.position.set(-0.2, 1.2, 0); earL.rotation.z = -0.3;
+      const earR = new THREE.Mesh(earGeo, mat);
+      earR.position.set(0.2, 1.2, 0); earR.rotation.z = 0.3;
+      g.add(earL, earR);
+      const eyeMat = new THREE.MeshLambertMaterial({ color: 0x00ee00 });
+      const eL = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), eyeMat);
+      eL.position.set(-0.13, 0.82, 0.36);
+      const eR = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), eyeMat);
+      eR.position.set(0.13, 0.82, 0.36);
+      g.add(eL, eR);
+      g.position.set(cx, -8.5, cz);
+      g.userData.offset = rand(0, Math.PI * 2);
+      scene.add(g);
+      cats.push(g);
+    });
+
+    const startTime = performance.now();
+    function danceCats() {
+      if (!active) return;
+      const t = (performance.now() - startTime) / 1000;
+      cats.forEach(cat => {
+        cat.position.y = -8.5 + Math.abs(Math.sin(t * 4 + cat.userData.offset)) * 1.5;
+        cat.rotation.y = t * 3 + cat.userData.offset;
+      });
+      requestAnimationFrame(danceCats);
+    }
+    danceCats();
+
+    setTimeout(() => {
+      active = false;
+      if (room && origRoomColor) room.material.color.copy(origRoomColor);
+      if (ambient && origAmbientColor) { ambient.color.copy(origAmbientColor); ambient.intensity = origAmbientInt; }
+      cats.forEach(cat => scene.remove(cat));
+    }, 4500);
+  },
+};
+
+// ─── Main event pool ─────────────────────────────────────────────────────────
 const events = [
   {
     id: 'earthquake',
@@ -559,6 +632,449 @@ const events = [
           });
         }, 1800);
       });
+    },
+  },
+  // ── 21. Alien ───────────────────────────────────────────────────────────────
+  {
+    id: 'alien',
+    name: 'DO NOT GIVE IT THE DONUT',
+    play(scene) {
+      const g = new THREE.Group();
+      const greenMat = new THREE.MeshLambertMaterial({ color: 0x44ff44, emissive: 0x224422, emissiveIntensity: 0.4 });
+
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.75, 16, 16), greenMat);
+      g.add(head);
+
+      // Big black eyes
+      const eyeMat = new THREE.MeshLambertMaterial({ color: 0x000000 });
+      const eL = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), eyeMat);
+      eL.position.set(-0.28, 0.1, 0.68);
+      const eR = new THREE.Mesh(new THREE.SphereGeometry(0.22, 10, 10), eyeMat);
+      eR.position.set(0.28, 0.1, 0.68);
+      g.add(eL, eR);
+
+      // Antennae
+      const antMat = new THREE.MeshLambertMaterial({ color: 0x44ff44 });
+      const tipMat = new THREE.MeshLambertMaterial({ color: 0xffff00, emissive: 0xaaaa00, emissiveIntensity: 0.6 });
+      const antGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.7, 8);
+      const antL = new THREE.Mesh(antGeo, antMat);
+      antL.position.set(-0.28, 1.1, 0); antL.rotation.z = 0.35;
+      const antR = new THREE.Mesh(antGeo, antMat);
+      antR.position.set(0.28, 1.1, 0); antR.rotation.z = -0.35;
+      g.add(antL, antR);
+      const tipL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), tipMat);
+      tipL.position.set(-0.5, 1.46, 0);
+      const tipR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), tipMat);
+      tipR.position.set(0.5, 1.46, 0);
+      g.add(tipL, tipR);
+
+      // Body
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), greenMat);
+      body.position.set(0, -1.1, 0); body.scale.set(1, 0.65, 1);
+      g.add(body);
+
+      // Glow
+      const glow = new THREE.PointLight(0x44ff44, 1.5, 5);
+      g.add(glow);
+
+      g.position.set(-9, 1, 0);
+      scene.add(g);
+
+      animate(1400, (t) => {
+        g.position.x = lerp(-9, -2, easeInOut(t));
+        g.position.y = 1 + Math.sin(t * Math.PI * 3) * 0.4;
+      }, () => {
+        const bobStart = performance.now();
+        let bobbing = true;
+        function bob() {
+          if (!bobbing) return;
+          const bt = (performance.now() - bobStart) / 1000;
+          g.position.y = 1 + Math.sin(bt * 3) * 0.5;
+          g.rotation.y = Math.sin(bt * 1.5) * 0.3;
+          requestAnimationFrame(bob);
+        }
+        bob();
+        setTimeout(() => {
+          bobbing = false;
+          animate(900, (t) => { g.position.x = lerp(-2, -10, easeInOut(t)); }, () => scene.remove(g));
+        }, 2500);
+      });
+    },
+  },
+
+  // ── 22. Cat explodes ────────────────────────────────────────────────────────
+  {
+    id: 'cat_explodes',
+    name: 'CAT EXPLOSION',
+    play(scene) {
+      const g = new THREE.Group();
+      const catMat = new THREE.MeshLambertMaterial({ color: 0xff8800 });
+
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), catMat);
+      g.add(body);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.44, 12, 12), catMat);
+      head.position.set(0, 0.88, 0);
+      g.add(head);
+      const earGeo = new THREE.ConeGeometry(0.14, 0.3, 8);
+      const earL = new THREE.Mesh(earGeo, catMat);
+      earL.position.set(-0.23, 1.35, 0); earL.rotation.z = -0.3;
+      const earR = new THREE.Mesh(earGeo, catMat);
+      earR.position.set(0.23, 1.35, 0); earR.rotation.z = 0.3;
+      g.add(earL, earR);
+      const eyeMat = new THREE.MeshLambertMaterial({ color: 0x00ff00, emissive: 0x008800 });
+      const eL = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eyeMat);
+      eL.position.set(-0.15, 0.94, 0.41);
+      const eR = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eyeMat);
+      eR.position.set(0.15, 0.94, 0.41);
+      g.add(eL, eR);
+
+      const spawnX = rand(-3, 3);
+      const spawnZ = rand(-3, 0);
+      g.position.set(spawnX, -8.5, spawnZ);
+      scene.add(g);
+
+      setTimeout(() => {
+        scene.remove(g);
+        // Flash
+        const flash = new THREE.PointLight(0xff6600, 10, 14);
+        flash.position.set(spawnX, -7.5, spawnZ);
+        scene.add(flash);
+        setTimeout(() => scene.remove(flash), 500);
+
+        // Room flash orange
+        const room = scene.getObjectByName('room');
+        if (room) {
+          const orig = room.material.color.clone();
+          room.material.color.set(0xff4400);
+          setTimeout(() => room.material.color.copy(orig), 200);
+        }
+
+        // Particles
+        for (let i = 0; i < 22; i++) {
+          const pGeo = new THREE.SphereGeometry(rand(0.07, 0.2), 6, 6);
+          const pMat = new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(rand(0, 0.12), 1, 0.55) });
+          const p = new THREE.Mesh(pGeo, pMat);
+          p.position.set(spawnX, -7.5, spawnZ);
+          const vx = rand(-5, 5), vy = rand(1, 6), vz = rand(-5, 5);
+          scene.add(p);
+          animate(900, (t) => {
+            p.position.x = spawnX + vx * t;
+            p.position.y = -7.5 + vy * t - 8 * t * t;
+            p.position.z = spawnZ + vz * t;
+            pMat.opacity = 1 - t;
+            pMat.transparent = true;
+          }, () => scene.remove(p));
+        }
+      }, 1000);
+    },
+  },
+
+  // ── 23. Room flips (persistent until next button press) ─────────────────────
+  {
+    id: 'room_flips',
+    name: 'THE ROOM HAS FLIPPED',
+    play(scene, camera) {
+      animate(900, (t) => {
+        camera.rotation.z = lerp(0, Math.PI, easeInOut(t));
+      }, () => {
+        window._persistentCleanup = () => {
+          animate(900, (t) => {
+            camera.rotation.z = lerp(Math.PI, 0, easeInOut(t));
+          });
+        };
+      });
+    },
+  },
+
+  // ── 24. Pitch black — you are not alone ─────────────────────────────────────
+  {
+    id: 'not_alone',
+    name: 'YOU ARE NOT ALONE',
+    play(scene, camera) {
+      const ambient = scene.getObjectByName('ambientLight');
+      const ceiling = scene.getObjectByName('ceilingLight');
+      const fill = scene.getObjectByName('fillLight');
+      const origA = ambient ? ambient.intensity : 0.6;
+      const origC = ceiling ? ceiling.intensity : 1.2;
+      const origF = fill ? fill.intensity : 0.3;
+
+      if (ambient) ambient.intensity = 0;
+      if (ceiling) ceiling.intensity = 0;
+      if (fill) fill.intensity = 0;
+
+      // Button red glow
+      const redGlow = new THREE.PointLight(0xff0000, 3.5, 14);
+      redGlow.position.set(0, -7, 0);
+      scene.add(redGlow);
+
+      // Two white "eyes" in the far corner
+      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), eyeMat);
+      eye1.position.set(-8.6, 2.2, -8.6);
+      const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), eyeMat);
+      eye2.position.set(-7.8, 2.2, -8.6);
+      scene.add(eye1, eye2);
+      const eyeGlow = new THREE.PointLight(0xffffff, 0.6, 2.5);
+      eyeGlow.position.set(-8.2, 2.2, -8.6);
+      scene.add(eyeGlow);
+
+      // Camera text: "YOU ARE NOT ALONE"
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024; canvas.height = 200;
+      const ctx = canvas.getContext('2d');
+      ctx.font = 'bold 58px Courier New';
+      ctx.fillStyle = 'rgba(255,255,255,1)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('YOU ARE NOT ALONE', 512, 100);
+      const tex = new THREE.CanvasTexture(canvas);
+      const tMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0, depthWrite: false });
+      const tMesh = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.4), tMat);
+      tMesh.position.set(0, -0.5, -5);
+      camera.add(tMesh);
+
+      animate(600, (t) => { tMat.opacity = t; });
+
+      setTimeout(() => {
+        animate(600, (t) => { tMat.opacity = 1 - t; }, () => {
+          camera.remove(tMesh);
+          tex.dispose();
+          scene.remove(redGlow, eye1, eye2, eyeGlow);
+          if (ambient) ambient.intensity = origA;
+          if (ceiling) ceiling.intensity = origC;
+          if (fill) fill.intensity = origF;
+        });
+      }, 3500);
+    },
+  },
+
+  // ── 25. Taco rain ───────────────────────────────────────────────────────────
+  {
+    id: 'taco_rain',
+    name: 'IT IS RAINING TACOS',
+    play(scene) {
+      const tacos = [];
+      for (let i = 0; i < 28; i++) {
+        const g = new THREE.Group();
+        // Shell (open torus arc)
+        const shellGeo = new THREE.TorusGeometry(0.38, 0.13, 8, 16, Math.PI);
+        const shell = new THREE.Mesh(shellGeo, new THREE.MeshLambertMaterial({ color: 0xd4a04a }));
+        g.add(shell);
+        // Lettuce
+        const lettuce = new THREE.Mesh(
+          new THREE.SphereGeometry(0.22, 8, 8),
+          new THREE.MeshLambertMaterial({ color: 0x44aa22 })
+        );
+        lettuce.position.set(0, 0.08, 0); lettuce.scale.set(1, 0.35, 0.8);
+        g.add(lettuce);
+        // Meat
+        const meat = new THREE.Mesh(
+          new THREE.SphereGeometry(0.18, 8, 8),
+          new THREE.MeshLambertMaterial({ color: 0x883300 })
+        );
+        meat.position.set(0.05, 0.05, 0); meat.scale.set(1, 0.3, 0.7);
+        g.add(meat);
+
+        g.position.set(rand(-8, 8), rand(11, 16), rand(-8, 8));
+        g.rotation.set(rand(0, Math.PI * 2), rand(0, Math.PI * 2), rand(0, Math.PI * 2));
+        g.userData.vy = rand(-0.06, -0.12);
+        g.userData.rx = rand(-0.02, 0.02);
+        g.userData.rz = rand(-0.02, 0.02);
+        scene.add(g);
+        tacos.push(g);
+      }
+
+      let active = true;
+      let lastT = performance.now();
+      function fall() {
+        if (!active) return;
+        const now = performance.now();
+        const dt = now - lastT; lastT = now;
+        tacos.forEach(t => {
+          t.position.y += t.userData.vy * dt * 0.12;
+          t.rotation.x += t.userData.rx * dt * 0.1;
+          t.rotation.z += t.userData.rz * dt * 0.1;
+        });
+        requestAnimationFrame(fall);
+      }
+      fall();
+      setTimeout(() => { active = false; tacos.forEach(t => scene.remove(t)); }, 3500);
+    },
+  },
+
+  // ── 26. Dancing man ─────────────────────────────────────────────────────────
+  {
+    id: 'dancing_man',
+    name: 'GET DOWN',
+    play(scene) {
+      const mat = new THREE.LineBasicMaterial({ color: 0x111111 });
+      const g = new THREE.Group();
+
+      // Head circle
+      const headPts = [];
+      for (let i = 0; i <= 20; i++) {
+        const a = (i / 20) * Math.PI * 2;
+        headPts.push(new THREE.Vector3(Math.cos(a) * 0.32, 2.1 + Math.sin(a) * 0.32, 0));
+      }
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(headPts), mat));
+
+      // Body
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 1.78, 0), new THREE.Vector3(0, 0.55, 0),
+      ]), mat));
+
+      // Arms (stored for animation)
+      const leftArmGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(-0.85, 1.0, 0),
+      ]);
+      const leftArm = new THREE.Line(leftArmGeo, mat);
+      g.add(leftArm);
+
+      const rightArmGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(0.85, 1.0, 0),
+      ]);
+      const rightArm = new THREE.Line(rightArmGeo, mat);
+      g.add(rightArm);
+
+      // Legs (stored for animation)
+      const leftLegGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(-0.55, -0.55, 0),
+      ]);
+      const leftLeg = new THREE.Line(leftLegGeo, mat);
+      g.add(leftLeg);
+
+      const rightLegGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0.55, 0), new THREE.Vector3(0.55, -0.55, 0),
+      ]);
+      const rightLeg = new THREE.Line(rightLegGeo, mat);
+      g.add(rightLeg);
+
+      g.position.set(rand(-3, 3), -8.2, rand(-3, -1));
+      g.scale.setScalar(1.8);
+      scene.add(g);
+
+      let active = true;
+      const t0 = performance.now();
+      function dance() {
+        if (!active) return;
+        const t = (performance.now() - t0) / 1000;
+
+        // Bob body
+        g.position.y = -8.2 + Math.abs(Math.sin(t * 5)) * 0.6;
+
+        // Swing arms
+        const swing = Math.sin(t * 5) * 0.55;
+        const laPos = leftArm.geometry.attributes.position;
+        laPos.setXYZ(1, -0.85, 1.0 + swing, 0); laPos.needsUpdate = true;
+        const raPos = rightArm.geometry.attributes.position;
+        raPos.setXYZ(1, 0.85, 1.0 - swing, 0); raPos.needsUpdate = true;
+
+        // Swing legs
+        const lSwing = Math.sin(t * 5) * 0.4;
+        const llPos = leftLeg.geometry.attributes.position;
+        llPos.setXYZ(1, -0.55 + lSwing * 0.3, -0.55, 0); llPos.needsUpdate = true;
+        const rlPos = rightLeg.geometry.attributes.position;
+        rlPos.setXYZ(1, 0.55 - lSwing * 0.3, -0.55, 0); rlPos.needsUpdate = true;
+
+        requestAnimationFrame(dance);
+      }
+      dance();
+      setTimeout(() => { active = false; scene.remove(g); }, 3500);
+    },
+  },
+
+  // ── 27. Ball flood ──────────────────────────────────────────────────────────
+  {
+    id: 'ball_flood',
+    name: 'BALL PIT',
+    play(scene) {
+      const balls = [];
+      for (let i = 0; i < 55; i++) {
+        setTimeout(() => {
+          const r = rand(0.22, 0.55);
+          const ball = new THREE.Mesh(
+            new THREE.SphereGeometry(r, 10, 10),
+            new THREE.MeshLambertMaterial({ color: randomColor() })
+          );
+          ball.position.set(rand(-7, 7), 12, rand(-7, 7));
+          ball.userData.vy = 0;
+          ball.userData.floor = -9.5 + r;
+          scene.add(ball);
+          balls.push(ball);
+        }, i * 70);
+      }
+
+      let active = true;
+      let lastT = performance.now();
+      function update() {
+        if (!active) return;
+        const now = performance.now();
+        const dt = Math.min((now - lastT) / 1000, 0.05); lastT = now;
+        balls.forEach(b => {
+          b.userData.vy -= 18 * dt;
+          b.position.y += b.userData.vy * dt;
+          if (b.position.y <= b.userData.floor) {
+            b.position.y = b.userData.floor;
+            b.userData.vy = Math.abs(b.userData.vy) * 0.45;
+          }
+        });
+        requestAnimationFrame(update);
+      }
+      update();
+      setTimeout(() => { active = false; balls.forEach(b => scene.remove(b)); }, 5500);
+    },
+  },
+
+  // ── 28. Button moves (persistent until next button press) ───────────────────
+  {
+    id: 'button_moves',
+    name: 'CATCH IT',
+    play(scene) {
+      const buttonGroup = scene.children.find(
+        c => c.isGroup && c.children.some(ch => ch.name === 'redButton')
+      );
+      if (!buttonGroup) return;
+
+      const origX = buttonGroup.position.x;
+      const origZ = buttonGroup.position.z;
+      let active = true;
+      let interval;
+
+      function scurry() {
+        if (!active) return;
+        const tx = rand(-5.5, 5.5);
+        const tz = rand(-5.5, 5.5);
+        const sx = buttonGroup.position.x;
+        const sz = buttonGroup.position.z;
+        animate(380, (t) => {
+          buttonGroup.position.x = lerp(sx, tx, easeInOut(t));
+          buttonGroup.position.z = lerp(sz, tz, easeInOut(t));
+        });
+      }
+
+      scurry();
+      interval = setInterval(scurry, 550);
+
+      window._persistentCleanup = () => {
+        active = false;
+        clearInterval(interval);
+        const cx = buttonGroup.position.x;
+        const cz = buttonGroup.position.z;
+        animate(500, (t) => {
+          buttonGroup.position.x = lerp(cx, origX, easeInOut(t));
+          buttonGroup.position.z = lerp(cz, origZ, easeInOut(t));
+        });
+      };
+    },
+  },
+
+  // ── 29. Nothing happens ─────────────────────────────────────────────────────
+  {
+    id: 'nothing_happens',
+    name: 'nothing happens.',
+    play() {
+      // intentionally empty
     },
   },
 ];

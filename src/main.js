@@ -2,6 +2,7 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 import { createRoom } from './room.js';
 import { createButton } from './button.js';
 import { EventManager } from './events/EventManager.js';
+import { congratsEvent } from './events/events.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -91,6 +92,12 @@ function onMouseClick(event) {
 }
 
 function handleButtonClick() {
+  // Resolve any persistent event (room flip, button chase) first
+  if (window._persistentCleanup) {
+    window._persistentCleanup();
+    window._persistentCleanup = null;
+  }
+
   clickCount++;
   updateCounter();
 
@@ -107,6 +114,10 @@ function handleButtonClick() {
   if (clickCount >= 100 && !rewardTriggered) {
     rewardTriggered = true;
     triggerReward();
+  } else if (clickCount === 30) {
+    // Milestone: congratulations at exactly 30 clicks
+    congratsEvent.play(scene, camera, renderer);
+    showEventName(congratsEvent.name);
   } else {
     // Trigger a random event
     const event = eventManager.triggerRandom(scene, camera, renderer);
