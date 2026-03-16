@@ -2,7 +2,7 @@ import * as THREE from 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/thr
 import { createRoom } from './room.js';
 import { createButton } from './button.js';
 import { EventManager } from './events/EventManager.js';
-import { congratsEvent } from './events/events.js';
+import { congratsEvent, congrats50Event } from './events/events.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -115,9 +115,11 @@ function handleButtonClick() {
     rewardTriggered = true;
     triggerReward();
   } else if (clickCount === 30) {
-    // Milestone: congratulations at exactly 30 clicks
     congratsEvent.play(scene, camera, renderer);
     showEventName(congratsEvent.name);
+  } else if (clickCount === 50) {
+    congrats50Event.play(scene, camera, renderer);
+    showEventName(congrats50Event.name);
   } else {
     // Trigger a random event
     const event = eventManager.triggerRandom(scene, camera, renderer);
@@ -188,6 +190,12 @@ function triggerReward() {
       setTimeout(() => document.body.removeChild(flashEl), 1100);
     }, 300);
   }, 10);
+
+  // Remove Timmy if he made it this far
+  if (window._timmyGroup) {
+    scene.remove(window._timmyGroup);
+    window._timmyGroup = null;
+  }
 
   // Trigger the reward in 3D and show HUD overlay
   setTimeout(() => {
