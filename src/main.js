@@ -256,10 +256,10 @@ function triggerReward() {
     eventManager.triggerReward(scene, camera, renderer);
   }, 400);
 
-  // Start escape sequence 20 seconds after the reward
+  // Start escape sequence 10 seconds after the reward
   setTimeout(() => {
     startEscapeSequence(scene, camera);
-  }, 20000);
+  }, 10000);
 }
 
 // ─── Window Resize ───────────────────────────────────────────────────────────
