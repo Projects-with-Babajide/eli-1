@@ -79,6 +79,12 @@ const mouse = new THREE.Vector2();
 function onMouseClick(event) {
   if (rewardTriggered) return;
 
+  // Monster fight mode: any click = sword swing, button disabled
+  if (window._monsterFight && window._monsterFight.active) {
+    if (window._monsterFight.onSwing) window._monsterFight.onSwing();
+    return;
+  }
+
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -191,11 +197,9 @@ function triggerReward() {
     }, 300);
   }, 10);
 
-  // Remove Timmy if he made it this far
-  if (window._timmyGroup) {
-    scene.remove(window._timmyGroup);
-    window._timmyGroup = null;
-  }
+  // Remove Timmy and banana if they made it this far
+  if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
+  if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
 
   // Trigger the reward in 3D and show HUD overlay
   setTimeout(() => {

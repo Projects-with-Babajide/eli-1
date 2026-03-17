@@ -1630,6 +1630,608 @@ const events = [
       }, 4500);
     },
   },
+
+  // ── 51. Unicorn flies across farting rainbows ────────────────────────────────
+  {
+    id: 'unicorn',
+    name: 'A WILD UNICORN APPEARED',
+    play(scene) {
+      const g = new THREE.Group();
+      const whiteMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
+
+      // Body
+      const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), whiteMat);
+      body.scale.set(1.7, 1.0, 1.0); g.add(body);
+      // Neck
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.3, 0.7, 10), whiteMat);
+      neck.position.set(0.85, 0.5, 0); neck.rotation.z = -0.5; g.add(neck);
+      // Head
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.34, 12, 12), whiteMat);
+      head.position.set(1.2, 0.85, 0); g.add(head);
+      // Horn (gold)
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.55, 8), new THREE.MeshLambertMaterial({ color: 0xffd700, emissive: 0xaa9900, emissiveIntensity: 0.6 }));
+      horn.position.set(1.52, 1.3, 0); horn.rotation.z = -0.2; g.add(horn);
+      // Legs (4)
+      [[-0.4, 0.35], [-0.4, -0.35], [0.4, 0.35], [0.4, -0.35]].forEach(([x, z]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.08, 0.7, 8), whiteMat);
+        leg.position.set(x, -0.95, z); g.add(leg);
+      });
+      // Rainbow mane (coloured spheres)
+      const maneColors = [0xff0000, 0xff8800, 0xffff00, 0x00ff00, 0x0088ff, 0x8800ff];
+      maneColors.forEach((c, i) => {
+        const m = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshLambertMaterial({ color: c, emissive: c, emissiveIntensity: 0.3 }));
+        m.position.set(0.9 + i * 0.06, 0.95 + Math.sin(i * 1.2) * 0.18, 0.05); g.add(m);
+      });
+
+      g.position.set(-10, -1, -2);
+      scene.add(g);
+
+      // Rainbow fart particles as it flies
+      const rainbowHues = [0, 0.08, 0.16, 0.25, 0.6, 0.75];
+      let hueIdx = 0;
+      let trailActive = true;
+
+      function spawnFart() {
+        if (!trailActive) return;
+        const hue = rainbowHues[hueIdx % rainbowHues.length]; hueIdx++;
+        for (let i = 0; i < 3; i++) {
+          const p = new THREE.Mesh(
+            new THREE.SphereGeometry(rand(0.08, 0.22), 6, 6),
+            new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(hue, 1, 0.6), emissive: new THREE.Color().setHSL(hue, 1, 0.4), emissiveIntensity: 0.5, transparent: true, opacity: 0.9 })
+          );
+          p.position.set(g.position.x - 0.8, g.position.y + rand(-0.4, 0.4), g.position.z + rand(-0.3, 0.3));
+          scene.add(p);
+          animate(1200, t => { p.position.y += 0.005; p.material.opacity = 1 - t; }, () => scene.remove(p));
+        }
+        setTimeout(spawnFart, 120);
+      }
+      spawnFart();
+
+      animate(3000, t => {
+        g.position.x = lerp(-10, 11, easeInOut(t));
+        g.position.y = -1 + Math.sin(t * Math.PI * 2) * 0.6;
+        g.rotation.y = Math.sin(t * 5) * 0.05;
+      }, () => {
+        trailActive = false;
+        scene.remove(g);
+      });
+    },
+  },
+
+  // ── 52. Rabbits and raining carrots ─────────────────────────────────────────
+  {
+    id: 'rabbits_and_carrots',
+    name: 'BUNNY INVASION',
+    play(scene) {
+      const rabbits = [];
+      for (let i = 0; i < 9; i++) {
+        const rg = new THREE.Group();
+        const wMat = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 });
+        rg.add(new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 10), wMat));
+        const rHead = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), wMat);
+        rHead.position.set(0, 0.62, 0.1); rg.add(rHead);
+        // Long ears
+        [[-0.14, 1.1], [0.14, 1.1]].forEach(([x, y]) => {
+          const ear = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, 0.55, 8), wMat);
+          ear.position.set(x, y, 0.05); rg.add(ear);
+          const inner = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.45, 8), new THREE.MeshLambertMaterial({ color: 0xffbbbb }));
+          inner.position.set(x, y, 0.07); rg.add(inner);
+        });
+        const noseMat = new THREE.MeshLambertMaterial({ color: 0xffaaaa });
+        rg.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), noseMat), { position: new THREE.Vector3(0, 0.6, 0.4) }));
+        rg.position.set(rand(-7, 7), -8.5, rand(-7, 7));
+        rg.userData.bobOffset = rand(0, Math.PI * 2);
+        scene.add(rg); rabbits.push(rg);
+      }
+
+      const carrots = [];
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          const cg = new THREE.Group();
+          const carrot = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.55, 8), new THREE.MeshLambertMaterial({ color: 0xff6600 }));
+          carrot.position.y = 0; cg.add(carrot);
+          const top = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshLambertMaterial({ color: 0x44aa22 }));
+          top.position.y = 0.32; top.scale.set(1, 0.5, 1); cg.add(top);
+          cg.position.set(rand(-8, 8), 11, rand(-8, 8));
+          cg.rotation.set(rand(-0.5, 0.5), rand(0, Math.PI * 2), rand(-0.5, 0.5));
+          cg.userData.vy = rand(-0.08, -0.14);
+          scene.add(cg); carrots.push(cg);
+        }, i * 150);
+      }
+
+      let active = true; const t0 = performance.now(); let lastT = t0;
+      function tick() {
+        if (!active) return;
+        const now = performance.now(); const dt = now - lastT; lastT = now;
+        const elapsed = (now - t0) / 1000;
+        rabbits.forEach(r => { r.position.y = -8.5 + Math.abs(Math.sin(elapsed * 4 + r.userData.bobOffset)) * 0.6; });
+        carrots.forEach(c => { c.position.y += c.userData.vy * dt * 0.1; c.rotation.z += 0.03; });
+        requestAnimationFrame(tick);
+      }
+      tick();
+      setTimeout(() => { active = false; rabbits.forEach(r => scene.remove(r)); carrots.forEach(c => scene.remove(c)); }, 4000);
+    },
+  },
+
+  // ── 53. Flashbang ────────────────────────────────────────────────────────────
+  {
+    id: 'flashbang',
+    name: 'FLASHBANG OUT',
+    play(scene, camera) {
+      const fb = document.createElement('div');
+      fb.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:white;z-index:100;pointer-events:none;opacity:1;';
+      document.body.appendChild(fb);
+      // Hard camera shake during
+      const origPos = camera.position.clone();
+      let shakeCount = 0;
+      function shake() {
+        camera.position.set(origPos.x + rand(-0.5, 0.5), origPos.y + rand(-0.3, 0.3), origPos.z + rand(-0.4, 0.4));
+        if (++shakeCount < 40) requestAnimationFrame(shake);
+        else camera.position.copy(origPos);
+      }
+      shake();
+      // Hold white 1.5s then fade
+      setTimeout(() => {
+        fb.style.transition = 'opacity 2s ease';
+        fb.style.opacity = '0';
+        setTimeout(() => document.body.removeChild(fb), 2100);
+      }, 1500);
+    },
+  },
+
+  // ── 54. Grilled cheese smacks you ────────────────────────────────────────────
+  {
+    id: 'grilled_cheese',
+    name: 'GRILLED CHEESE ATTACK',
+    play(scene, camera) {
+      const g = new THREE.Group();
+      const breadMat = new THREE.MeshLambertMaterial({ color: 0xd48b3a });
+      const cheeseMat = new THREE.MeshLambertMaterial({ color: 0xffcc33 });
+      // Bottom bread
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 1.6), breadMat));
+      // Cheese layer
+      const cheese = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 1.5), cheeseMat);
+      cheese.position.y = 0.17; g.add(cheese);
+      // Top bread
+      const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.2, 1.6), breadMat);
+      top.position.y = 0.33; g.add(top);
+      // Golden-brown crust lines
+      const crustMat = new THREE.MeshLambertMaterial({ color: 0x8b5e1a });
+      [[-0.6, 0], [0, 0], [0.6, 0]].forEach(([x, z]) => {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.22, 1.6), crustMat);
+        line.position.set(x, 0, z); g.add(line);
+      });
+
+      g.position.set(0, 0, -8);
+      g.rotation.set(rand(-0.3, 0.3), rand(-0.3, 0.3), rand(-0.2, 0.2));
+      camera.add(g);
+
+      animate(350, t => {
+        g.position.z = lerp(-8, -0.3, easeInOut(t));
+        g.scale.setScalar(lerp(0.5, 2.5, easeInOut(t)));
+      }, () => {
+        // SMACK
+        const origPos = camera.position.clone();
+        let sc = 0;
+        function shake() {
+          camera.position.set(origPos.x + rand(-0.5, 0.5), origPos.y + rand(-0.4, 0.4), origPos.z + rand(-0.4, 0.4));
+          if (++sc < 20) requestAnimationFrame(shake); else camera.position.copy(origPos);
+        }
+        shake();
+        // Cheese drop
+        setTimeout(() => {
+          animate(400, t => { g.position.z = lerp(-0.3, 3, t); g.position.y = lerp(0, -5, easeInOut(t)); }, () => { camera.remove(g); });
+        }, 200);
+      });
+    },
+  },
+
+  // ── 55. Banana taped to wall (stays until 100) ───────────────────────────────
+  {
+    id: 'banana_on_wall',
+    name: 'BANANA TAPED TO WALL',
+    play(scene, camera) {
+      if (window._bananaGroup) return;
+      const g = new THREE.Group();
+      // Banana (curved torus arc)
+      const banana = new THREE.Mesh(
+        new THREE.TorusGeometry(0.6, 0.14, 10, 24, Math.PI * 1.15),
+        new THREE.MeshLambertMaterial({ color: 0xffee33, emissive: 0xaaaa00, emissiveIntensity: 0.2 })
+      );
+      banana.rotation.z = -Math.PI * 0.15; g.add(banana);
+      // Tips (dark)
+      const tipMat = new THREE.MeshLambertMaterial({ color: 0x887700 });
+      const tip1 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), tipMat);
+      tip1.position.set(0.6, 0, 0); g.add(tip1);
+      const tip2 = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), tipMat);
+      tip2.position.set(-0.23, -1.2, 0); g.add(tip2);
+      // Tape (small grey strip)
+      const tape = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.12, 0.02), new THREE.MeshLambertMaterial({ color: 0xddddcc, transparent: true, opacity: 0.7 }));
+      tape.position.set(0.18, -0.5, 0.14); g.add(tape);
+
+      g.position.set(-3, 0, -9.4); // pinned to back wall
+      g.scale.setScalar(1.3);
+      scene.add(g);
+      window._bananaGroup = g;
+
+      const txt = makeTextOnCamera(camera, 'BANANA TAPED TO WALL', 1.2, { color: '#887700', fontSize: 50 });
+      txt.fadeIn(400); txt.fadeOut(600, 2500);
+
+      // Gentle sway
+      const t0 = performance.now();
+      function sway() {
+        if (!window._bananaGroup) return;
+        g.rotation.z = Math.sin((performance.now() - t0) / 1000 * 0.8) * 0.06;
+        requestAnimationFrame(sway);
+      }
+      sway();
+    },
+  },
+
+  // ── 56. Cupid shoots you ─────────────────────────────────────────────────────
+  {
+    id: 'cupid',
+    name: 'LOVE HURTS',
+    play(scene, camera) {
+      // Cupid: tiny stick figure with wings
+      const cg = new THREE.Group();
+      const pinkMat = new THREE.MeshLambertMaterial({ color: 0xffbbaa });
+      const lineMat = new THREE.LineBasicMaterial({ color: 0xff6688 });
+      cg.add(new THREE.Mesh(new THREE.SphereGeometry(0.25, 10, 10), pinkMat)); // body
+      const cHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), pinkMat);
+      cHead.position.set(0, 0.38, 0); cg.add(cHead);
+      // Wings (flat ellipses)
+      const wingMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+      [[-0.5, 0.1], [0.5, 0.1]].forEach(([x, _]) => {
+        const wing = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), wingMat);
+        wing.position.set(x, 0.1, -0.1); wing.scale.set(1, 0.35, 0.4); cg.add(wing);
+      });
+      // Bow
+      const bow = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 16, Math.PI * 1.3), new THREE.MeshLambertMaterial({ color: 0xcc8833 }));
+      bow.position.set(0.35, 0, 0.2); bow.rotation.y = Math.PI / 2; cg.add(bow);
+
+      cg.position.set(7, 2, -3); cg.scale.setScalar(1.8);
+      scene.add(cg);
+
+      let flapActive = true; const t0 = performance.now();
+      function flap() {
+        if (!flapActive) return;
+        const t = (performance.now() - t0) / 1000;
+        cg.position.y = 2 + Math.sin(t * 8) * 0.3;
+        requestAnimationFrame(flap);
+      }
+      flap();
+
+      // Fly in
+      animate(1200, t => { cg.position.x = lerp(7, 1, easeInOut(t)); }, () => {
+        // Shoot arrow
+        const arrow = new THREE.Group();
+        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 8), new THREE.MeshLambertMaterial({ color: 0xcc8833 }));
+        shaft.rotation.z = Math.PI / 2; arrow.add(shaft);
+        const tip = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.2, 8), new THREE.MeshLambertMaterial({ color: 0xaaaaaa }));
+        tip.position.set(0.7, 0, 0); tip.rotation.z = -Math.PI / 2; arrow.add(tip);
+        arrow.position.copy(cg.position); arrow.position.z += 0.2;
+        scene.add(arrow);
+
+        animate(500, t => { arrow.position.z = lerp(cg.position.z, 10, easeInOut(t)); }, () => scene.remove(arrow));
+
+        // Hearts on impact (heart = 2 spheres + diamond)
+        setTimeout(() => {
+          for (let i = 0; i < 8; i++) {
+            const h = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshLambertMaterial({ color: 0xff1166, emissive: 0xaa0033, emissiveIntensity: 0.4 }));
+            h.position.set(rand(-2, 2), rand(-1, 2), rand(5, 8));
+            scene.add(h);
+            animate(1000, t => { h.position.y += 0.02; h.material.opacity = 1 - t; h.material.transparent = true; }, () => scene.remove(h));
+          }
+          // Pink vignette
+          const pv = document.createElement('div');
+          pv.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:30;background:radial-gradient(ellipse at center,transparent 30%,rgba(255,100,150,0.5) 100%);';
+          document.body.appendChild(pv);
+          setTimeout(() => { pv.style.transition = 'opacity 1.5s'; pv.style.opacity = '0'; setTimeout(() => document.body.removeChild(pv), 1600); }, 300);
+        }, 480);
+
+        // Fly away
+        setTimeout(() => { flapActive = false; animate(1000, t => { cg.position.x = lerp(1, -8, easeInOut(t)); }, () => scene.remove(cg)); }, 1500);
+      });
+    },
+  },
+
+  // ── 57. Monster attacks Timmy — sword fight ──────────────────────────────────
+  {
+    id: 'monster_fight',
+    name: 'DEFEND TIMMY!',
+    play(scene, camera) {
+      if (window._monsterFight) return; // already fighting
+
+      // ── Monster ──
+      const mg = new THREE.Group();
+      const monsterMat = new THREE.MeshLambertMaterial({ color: 0x220033 });
+      const mBody = new THREE.Mesh(new THREE.SphereGeometry(1.4, 14, 14), monsterMat);
+      mg.add(mBody);
+      // Spikes
+      for (let i = 0; i < 10; i++) {
+        const spike = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.9, 6), new THREE.MeshLambertMaterial({ color: 0x440055 }));
+        const angle = (i / 10) * Math.PI * 2;
+        spike.position.set(Math.cos(angle) * 1.3, Math.sin(angle) * 1.3, 0);
+        spike.rotation.z = angle + Math.PI / 2; mg.add(spike);
+      }
+      // Glowing red eyes
+      const eyeGlow1 = new THREE.PointLight(0xff0000, 2.5, 5);
+      eyeGlow1.position.set(-0.45, 0.3, 1.2); mg.add(eyeGlow1);
+      const eyeGlow2 = new THREE.PointLight(0xff0000, 2.5, 5);
+      eyeGlow2.position.set(0.45, 0.3, 1.2); mg.add(eyeGlow2);
+      const eyeMat5 = new THREE.MeshLambertMaterial({ color: 0xff0000, emissive: 0xff0000, emissiveIntensity: 1 });
+      [[-0.45, 0.3], [0.45, 0.3]].forEach(([x, y]) => {
+        mg.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 8), eyeMat5), { position: new THREE.Vector3(x, y, 1.3) }));
+      });
+      mg.position.set(-2, 0, -9);
+      scene.add(mg);
+
+      // ── Sword on camera ──
+      const sword = new THREE.Group();
+      const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8), new THREE.MeshLambertMaterial({ color: 0x8B4513 }));
+      sword.add(handle);
+      const guard = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.07, 0.07), new THREE.MeshLambertMaterial({ color: 0xaaaaaa }));
+      guard.position.y = 0.28; sword.add(guard);
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.9, 0.04), new THREE.MeshLambertMaterial({ color: 0xddddee, emissive: 0x8888aa, emissiveIntensity: 0.3 }));
+      blade.position.y = 0.78; sword.add(blade);
+      const tip3 = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.2, 6), new THREE.MeshLambertMaterial({ color: 0xddddee }));
+      tip3.position.y = 1.33; sword.add(tip3);
+      sword.position.set(1.1, -1.0, -2.2);
+      sword.rotation.z = 0.3;
+      camera.add(sword);
+
+      // ── Fight HUD ──
+      const fightHUD = document.createElement('div');
+      fightHUD.style.cssText = `
+        position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+        color:#ff2200;font-family:'Courier New',monospace;font-size:22px;font-weight:bold;
+        text-align:center;text-shadow:0 0 8px #ff0000;pointer-events:none;z-index:40;
+      `;
+      let hitsLeft = 15;
+      fightHUD.innerHTML = `⚔️ DEFEND TIMMY! ⚔️<br>CLICK ${hitsLeft} TIMES TO DEFEAT IT`;
+      document.body.appendChild(fightHUD);
+
+      // ── Monster approach ──
+      let approachActive = true;
+      let monsterZ = -9;
+      function approach() {
+        if (!approachActive) return;
+        monsterZ += 0.015;
+        mg.position.z = monsterZ;
+        mg.rotation.y += 0.02;
+        if (monsterZ < 3) requestAnimationFrame(approach);
+      }
+      approach();
+
+      // ── Sword swing ──
+      function swingSword() {
+        animate(120, t => { sword.rotation.z = lerp(0.3, -0.8, easeInOut(t)); }, () => {
+          animate(120, t => { sword.rotation.z = lerp(-0.8, 0.3, easeInOut(t)); });
+        });
+        // Monster flash red
+        const origColor = mBody.material.color.clone();
+        mBody.material.color.set(0xff0000);
+        setTimeout(() => mBody.material.color.copy(origColor), 150);
+        // Knock back
+        const knockZ = mg.position.z - 0.4;
+        animate(200, t => { mg.position.z = lerp(monsterZ, knockZ, easeInOut(t)); }, () => { monsterZ = knockZ; });
+      }
+
+      // ── On swing callback ──
+      function onSwing() {
+        if (hitsLeft <= 0) return;
+        swingSword();
+        hitsLeft--;
+        fightHUD.innerHTML = `⚔️ DEFEND TIMMY! ⚔️<br>CLICK ${hitsLeft} TIMES TO DEFEAT IT`;
+
+        if (hitsLeft <= 0) {
+          // Monster dies
+          approachActive = false;
+          setTimeout(() => {
+            // Explosion
+            for (let i = 0; i < 18; i++) {
+              const p = new THREE.Mesh(new THREE.SphereGeometry(rand(0.1, 0.35), 6, 6), new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(rand(0.7, 0.85), 1, 0.5) }));
+              p.position.copy(mg.position);
+              const vx = rand(-3, 3), vy = rand(-2, 4), vz = rand(-3, 3);
+              scene.add(p);
+              animate(900, t => { p.position.x += vx * 0.016; p.position.y += vy * 0.016 - 5 * t * 0.016; p.position.z += vz * 0.016; p.material.opacity = 1 - t; p.material.transparent = true; }, () => scene.remove(p));
+            }
+            const boom = new THREE.PointLight(0xaa00ff, 8, 15);
+            boom.position.copy(mg.position); scene.add(boom);
+            setTimeout(() => scene.remove(boom), 400);
+            scene.remove(mg);
+            camera.remove(sword);
+            document.body.removeChild(fightHUD);
+            window._monsterFight = null;
+          }, 300);
+        }
+      }
+
+      window._monsterFight = { active: true, onSwing };
+    },
+  },
+
+  // ── 58. Cup of coffee ────────────────────────────────────────────────────────
+  {
+    id: 'coffee',
+    name: 'TAKE A BREAK',
+    play(scene, camera) {
+      const cg = new THREE.Group();
+      // Cup body (cylinder)
+      const cupMat = new THREE.MeshLambertMaterial({ color: 0xdddddd });
+      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.25, 0.5, 16), cupMat);
+      cg.add(cup);
+      // Coffee surface (dark circle)
+      const coffee = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.01, 16), new THREE.MeshLambertMaterial({ color: 0x3a1a00 }));
+      coffee.position.y = 0.26; cg.add(coffee);
+      // Handle (partial torus)
+      const handle2 = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.045, 8, 16, Math.PI), new THREE.MeshLambertMaterial({ color: 0xdddddd }));
+      handle2.position.set(0.3, 0, 0); handle2.rotation.z = Math.PI / 2; cg.add(handle2);
+      // Saucer
+      const saucer = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.45, 0.06, 16), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+      saucer.position.y = -0.3; cg.add(saucer);
+      // Steam particles
+      const steamColors = [new THREE.Color(0xffffff)];
+      const steams = [];
+      for (let i = 0; i < 5; i++) {
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.06, 6, 6), new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 }));
+        s.position.set(rand(-0.1, 0.1), 0.3 + i * 0.15, rand(-0.1, 0.1)); cg.add(s); steams.push(s);
+      }
+
+      cg.position.set(0.5, -0.8, -2.5);
+      camera.add(cg);
+
+      const txt = makeTextOnCamera(camera, 'THIS IS HARD WORK.\nDRINK SOME COFFEE :)', -1.5, { color: '#4a2800', fontSize: 46 });
+      txt.fadeIn(400); txt.fadeOut(600, 3500);
+
+      let steamActive = true; const ts0 = performance.now();
+      function steamAnim() {
+        if (!steamActive) return;
+        const t = (performance.now() - ts0) / 1000;
+        steams.forEach((s, i) => { s.position.y = 0.3 + i * 0.15 + ((t * 0.4 + i * 0.2) % 0.8); s.material.opacity = 0.5 - ((t * 0.4 + i * 0.2) % 0.8) * 0.5; });
+        requestAnimationFrame(steamAnim);
+      }
+      steamAnim();
+
+      setTimeout(() => {
+        steamActive = false;
+        animate(500, t => { cg.position.y = lerp(-0.8, -3, easeInOut(t)); cg.material && (cg.material.opacity = 1 - t); }, () => { camera.remove(cg); });
+      }, 4500);
+    },
+  },
+
+  // ── 59. Dragon breathes fire ─────────────────────────────────────────────────
+  {
+    id: 'dragon',
+    name: 'DRAGON',
+    play(scene, camera) {
+      const dg = new THREE.Group();
+      const dMat = new THREE.MeshLambertMaterial({ color: 0x228800, emissive: 0x114400, emissiveIntensity: 0.3 });
+      const dDarkMat = new THREE.MeshLambertMaterial({ color: 0x115500 });
+
+      // Body (big elongated)
+      const dBody = new THREE.Mesh(new THREE.SphereGeometry(1.1, 12, 12), dMat);
+      dBody.scale.set(2.2, 1.0, 1.2); dg.add(dBody);
+      // Neck
+      const dNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 1.0, 10), dMat);
+      dNeck.position.set(1.8, 0.6, 0); dNeck.rotation.z = -0.6; dg.add(dNeck);
+      // Head
+      const dHead = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), dMat);
+      dHead.position.set(2.5, 1.1, 0); dHead.scale.set(1.3, 0.9, 1.0); dg.add(dHead);
+      // Snout
+      const dSnout = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), dMat);
+      dSnout.position.set(3.05, 0.95, 0); dSnout.scale.set(1.2, 0.6, 0.8); dg.add(dSnout);
+      // Horns
+      [0.22, -0.22].forEach(z => {
+        const h = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.55, 8), dDarkMat);
+        h.position.set(2.35, 1.65, z); h.rotation.z = 0.25 * (z > 0 ? 1 : -1); dg.add(h);
+      });
+      // Wings (big flat planes)
+      const wingMat2 = new THREE.MeshLambertMaterial({ color: 0x338800, side: THREE.DoubleSide });
+      [0.6, -0.6].forEach(z => {
+        const wing = new THREE.Mesh(new THREE.ConeGeometry(2.5, 3.5, 4), wingMat2);
+        wing.position.set(0, 1.2, z * 1.5); wing.rotation.x = (z > 0 ? 0.4 : -0.4); wing.rotation.z = z > 0 ? -0.3 : 0.3; dg.add(wing);
+      });
+      // Tail
+      const dTail = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.45, 2.0, 8), dMat);
+      dTail.position.set(-2.8, -0.2, 0); dTail.rotation.z = 0.5; dg.add(dTail);
+      // Eyes
+      const dEyeMat = new THREE.MeshLambertMaterial({ color: 0xff8800, emissive: 0xff4400, emissiveIntensity: 0.8 });
+      [0.2, -0.2].forEach(z => {
+        dg.add(Object.assign(new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), dEyeMat), { position: new THREE.Vector3(2.7, 1.18, z) }));
+      });
+
+      dg.position.set(-12, 1, 2); dg.scale.setScalar(1.3);
+      scene.add(dg);
+
+      let wingActive = true; const dt0 = performance.now();
+      function wingFlap() {
+        if (!wingActive) return;
+        const t = (performance.now() - dt0) / 1000;
+        dg.position.y = 1 + Math.sin(t * 4) * 0.5;
+        requestAnimationFrame(wingFlap);
+      }
+      wingFlap();
+
+      animate(2500, t => { dg.position.x = lerp(-12, 4, easeInOut(t)); }, () => {
+        // BREATHE FIRE
+        const fireLight = new THREE.PointLight(0xff4400, 8, 18);
+        fireLight.position.set(5, 1, 2); scene.add(fireLight);
+
+        // Fire particles streaming from mouth
+        const fireParticles = [];
+        for (let i = 0; i < 25; i++) {
+          setTimeout(() => {
+            const fp = new THREE.Mesh(
+              new THREE.SphereGeometry(rand(0.15, 0.45), 6, 6),
+              new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(rand(0, 0.1), 1, 0.55), transparent: true })
+            );
+            fp.position.set(6, 1, 2);
+            scene.add(fp); fireParticles.push(fp);
+            animate(700, t => {
+              fp.position.z = lerp(2, 8 + rand(-2, 2), easeInOut(t));
+              fp.position.y = lerp(1, rand(-3, 3), t);
+              fp.material.opacity = 1 - t;
+            }, () => scene.remove(fp));
+          }, i * 60);
+        }
+
+        // Room flash orange
+        const room3 = scene.getObjectByName('room');
+        const origRoomCol = room3 ? room3.material.color.clone() : null;
+        if (room3) {
+          let fc = 0; let fireFlashing = true;
+          function fireFlash() {
+            if (!fireFlashing) return;
+            room3.material.color.set([0xff4400, 0xff6600, 0xff2200][fc % 3]); fc++;
+            if (fc < 10) setTimeout(fireFlash, 100); else { fireFlashing = false; if (origRoomCol) room3.material.color.copy(origRoomCol); }
+          }
+          fireFlash();
+        }
+
+        setTimeout(() => scene.remove(fireLight), 1500);
+
+        // Fly away
+        setTimeout(() => {
+          wingActive = false;
+          animate(1500, t => { dg.position.x = lerp(4, 14, easeInOut(t)); }, () => scene.remove(dg));
+        }, 1800);
+      });
+    },
+  },
+
+  // ── 60. Another cow ──────────────────────────────────────────────────────────
+  {
+    id: 'cow2',
+    name: 'MOOO... AGAIN',
+    play(scene, camera) {
+      // Same lovable cow, enters from the right this time
+      const g = new THREE.Group();
+      const cmat2 = new THREE.MeshLambertMaterial({ color: 0xffffff });
+      const body2 = new THREE.Mesh(new THREE.SphereGeometry(1.0, 12, 12), cmat2);
+      body2.scale.set(1.8, 1.0, 1.0); g.add(body2);
+      const spotMat3 = new THREE.MeshLambertMaterial({ color: 0x111111 });
+      [[0.3, 0.5, 0.92], [-0.4, -0.1, 0.93]].forEach(([x, y, z]) => {
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.32, 8, 8), spotMat3); s.position.set(x, y, z); s.scale.z = 0.12; g.add(s);
+      });
+      const hd2 = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), cmat2);
+      hd2.position.set(1.55, 0.35, 0); hd2.scale.set(1.1, 0.9, 0.9); g.add(hd2);
+      const snout3 = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 10), new THREE.MeshLambertMaterial({ color: 0xffbbaa }));
+      snout3.position.set(2.05, 0.2, 0); snout3.scale.set(0.9, 0.65, 0.8); g.add(snout3);
+      [[-0.6, 0.5], [-0.6, -0.5], [0.6, 0.5], [0.6, -0.5]].forEach(([x, z]) => {
+        const leg2 = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.12, 0.9, 8), cmat2); leg2.position.set(x, -1.1, z); g.add(leg2);
+      });
+      g.position.set(-10, -8.0, 1); g.rotation.y = Math.PI; scene.add(g);
+
+      const txt2 = makeTextOnCamera(camera, 'MOOO... AGAIN', 0.5, { color: '#225500', fontSize: 70 });
+      txt2.fadeIn(300); txt2.fadeOut(500, 2000);
+
+      animate(2000, t => { g.position.x = lerp(-10, -2, easeInOut(t)); }, () => {
+        setTimeout(() => { animate(1500, t => { g.position.x = lerp(-2, -11, easeInOut(t)); }, () => scene.remove(g)); }, 2500);
+      });
+    },
+  },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
