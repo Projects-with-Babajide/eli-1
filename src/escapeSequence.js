@@ -312,7 +312,7 @@ export async function startEscapeSequence(scene, camera) {
   // ── Phase 6: Scientist enters ────────────────────────────────────────────
   const scientist = buildScientist();
   scientist.position.set(0, -8.5, -9.6);
-  scientist.rotation.y = Math.PI; // faces into room
+  scientist.rotation.y = 0; // faces into room (forward)
   scene.add(scientist);
 
   await tween(2200, t => {
@@ -340,15 +340,15 @@ export async function startEscapeSequence(scene, camera) {
   await tween(2800, t => {
     scientist.position.x = lerp(0, 5, easeInOut(t));
     scientist.position.z = lerp(-3, 3, easeInOut(t));
-    scientist.rotation.y = lerp(Math.PI, Math.PI * 2.5, t);
+    scientist.rotation.y = lerp(0, Math.PI * 1.5, t);
   });
   await wait(400);
 
   clearDialogue();
-  // Scientist walks close to the box (tense moment)
+  // Scientist walks close to the box (tense moment) — stays in front so player can see
   await tween(1500, t => {
     scientist.position.x = lerp(5, -4, easeInOut(t));
-    scientist.position.z = lerp(3, 5, easeInOut(t));
+    scientist.position.z = lerp(3, 2, easeInOut(t));
   });
   await wait(800);
 
@@ -356,20 +356,20 @@ export async function startEscapeSequence(scene, camera) {
   await wait(2500);
   clearDialogue();
 
-  // Scientist reaches for electrifier and advances on box
+  // Scientist reaches for electrifier and advances on box — stays in front of box
   showDialogue('STEP ASIDE, TIMMY. I NEED TO OPEN IT.', 'scientist');
   await tween(1200, t => {
-    scientist.position.x = lerp(-4, -4.6, easeInOut(t));
-    scientist.position.z = lerp(5, 4.8, easeInOut(t));
+    scientist.position.x = lerp(-4, -4.8, easeInOut(t));
+    scientist.position.z = lerp(2, 2.5, easeInOut(t));
   });
   await wait(2600);
   clearDialogue();
 
-  // Scientist closes in on box — danger
+  // Scientist closes in — still in front of box (z < 4.5 = visible to player)
   showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'scientist');
   await tween(1000, t => {
-    scientist.position.x = lerp(-4.6, -5, easeInOut(t));
-    scientist.position.z = lerp(4.8, 4.6, easeInOut(t));
+    scientist.position.x = lerp(-4.8, -5, easeInOut(t));
+    scientist.position.z = lerp(2.5, 3.0, easeInOut(t));
   });
   await wait(2000);
   clearDialogue();
@@ -380,12 +380,12 @@ export async function startEscapeSequence(scene, camera) {
   // Timmy leaps from pedestal to block the scientist
   timmyBobActive = false;
   await tween(700, t => {
-    timmy.position.x = lerp(0, -5.2, easeInOut(t));
-    timmy.position.z = lerp(0.5, 5.2, easeInOut(t));
+    timmy.position.x = lerp(0, -5.0, easeInOut(t));
+    timmy.position.z = lerp(0.5, 3.2, easeInOut(t));
     timmy.position.y = lerp(-7.0, -8.8, easeInOut(t)) + Math.abs(Math.sin(t * Math.PI)) * 3;
     timmy.rotation.y = lerp(Math.PI, Math.PI * 2.5, easeInOut(t));
   });
-  timmy.position.set(-5.2, -8.8, 5.2);
+  timmy.position.set(-5.0, -8.8, 3.2);
   await wait(400);
   clearDialogue();
 
