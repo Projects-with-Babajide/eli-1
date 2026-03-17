@@ -356,36 +356,95 @@ export async function startEscapeSequence(scene, camera) {
   await wait(2500);
   clearDialogue();
 
-  // Tense pause — scientist stares at box
-  await wait(1200);
-
-  showDialogue('NO. THEY COULD NOT HAVE FIT.', 'scientist');
-  await wait(2500);
+  // Scientist reaches for electrifier and advances on box
+  showDialogue('STEP ASIDE, TIMMY. I NEED TO OPEN IT.', 'scientist');
+  await tween(1200, t => {
+    scientist.position.x = lerp(-4, -4.6, easeInOut(t));
+    scientist.position.z = lerp(5, 4.8, easeInOut(t));
+  });
+  await wait(2600);
   clearDialogue();
 
-  // Scientist turns and walks back
-  await tween(2200, t => {
-    scientist.position.x = lerp(-4, 0, easeInOut(t));
-    scientist.position.z = lerp(5, -9.5, easeInOut(t));
-    scientist.rotation.y = lerp(Math.PI * 2.5, Math.PI, easeInOut(t));
+  // Scientist closes in on box — danger
+  showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'scientist');
+  await tween(1000, t => {
+    scientist.position.x = lerp(-4.6, -5, easeInOut(t));
+    scientist.position.z = lerp(4.8, 4.6, easeInOut(t));
   });
-  await wait(300);
-  scene.remove(scientist);
+  await wait(2000);
+  clearDialogue();
 
-  // ── Phase 7: Door ajar ───────────────────────────────────────────────────
-  // Door swings almost closed but stops — left ajar
-  await tween(900, t => {
-    doorPanel.rotation.y = lerp(-Math.PI * 0.78, -Math.PI * 0.12, easeInOut(t));
+  // ── Timmy intercepts ─────────────────────────────────────────────────────
+  showDialogue('NO! LEAVE THEM ALONE!', 'timmy');
+
+  // Timmy leaps from pedestal to block the scientist
+  timmyBobActive = false;
+  await tween(700, t => {
+    timmy.position.x = lerp(0, -5.2, easeInOut(t));
+    timmy.position.z = lerp(0.5, 5.2, easeInOut(t));
+    timmy.position.y = lerp(-7.0, -8.8, easeInOut(t)) + Math.abs(Math.sin(t * Math.PI)) * 3;
+    timmy.rotation.y = lerp(Math.PI, Math.PI * 2.5, easeInOut(t));
   });
+  timmy.position.set(-5.2, -8.8, 5.2);
+  await wait(400);
+  clearDialogue();
+
+  // ── Electric shock ───────────────────────────────────────────────────────
+  // Flash overlay — repeated pulses
+  const flashEl = document.createElement('div');
+  flashEl.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    pointer-events:none;z-index:50;
+    background:rgba(100,180,255,0.0);transition:background 0.08s;
+  `;
+  document.body.appendChild(flashEl);
+
+  for (let i = 0; i < 5; i++) {
+    flashEl.style.background = `rgba(100,180,255,${0.5 + i * 0.1})`;
+    await wait(80);
+    flashEl.style.background = 'rgba(100,180,255,0)';
+    await wait(80);
+  }
+  // Final big white-blue flash
+  flashEl.style.transition = 'background 0.05s';
+  flashEl.style.background = 'rgba(200,230,255,0.95)';
+  await wait(300);
+  flashEl.style.transition = 'background 0.5s';
+  flashEl.style.background = 'rgba(100,180,255,0)';
+  await wait(600);
+  flashEl.remove();
+
+  // Both Timmy and scientist crumple
+  timmy.rotation.z = 1.1;
+  timmy.position.y = -9.4;
+  scientist.rotation.z = -0.9;
+  scientist.position.y = -9.0;
+
   await wait(800);
 
-  showDialogue('THE DOOR... IT IS STILL OPEN.', 'timmy');
-  await wait(2800);
+  // ── Timmy's last words ───────────────────────────────────────────────────
+  showDialogue('run.', 'timmy');
+  await wait(3000);
   clearDialogue();
-  await wait(500);
+  await wait(400);
 
-  // ── Phase 8: Ending ──────────────────────────────────────────────────────
-  // Fade vignette to white
+  // ── Camera bolts for the door ────────────────────────────────────────────
+  const runStartX = camera.position.x;
+  const runStartZ = camera.position.z;
+  const runStartY = camera.position.y;
+
+  await tween(2200, t => {
+    const e = easeInOut(t);
+    camera.position.x = lerp(runStartX, 0, e);
+    camera.position.z = lerp(runStartZ, -9.0, e);
+    camera.position.y = lerp(runStartY, -8.5, e);
+    camera.rotation.y = lerp(0, 0, e);
+    camera.rotation.x = lerp(0, -0.1, e);
+  });
+
+  await wait(600);
+
+  // ── Fade to white ────────────────────────────────────────────────────────
   vignette.style.transition = 'opacity 3s ease, background 3s ease';
   vignette.style.background = 'white';
   await wait(100);
