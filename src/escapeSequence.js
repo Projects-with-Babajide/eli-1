@@ -345,10 +345,10 @@ export async function startEscapeSequence(scene, camera) {
   await wait(400);
 
   clearDialogue();
-  // Scientist walks close to the box (tense moment) — stays well in front so player can see
+  // Scientist walks toward the box — far enough back that player sees full scene
   await tween(1500, t => {
     scientist.position.x = lerp(5, -4, easeInOut(t));
-    scientist.position.z = lerp(3, 0, easeInOut(t));
+    scientist.position.z = lerp(3, -4, easeInOut(t));
   });
   await wait(800);
 
@@ -356,20 +356,20 @@ export async function startEscapeSequence(scene, camera) {
   await wait(2500);
   clearDialogue();
 
-  // Scientist reaches for electrifier and advances on box
+  // Scientist reaches for electrifier and advances
   showDialogue('STEP ASIDE, TIMMY. I NEED TO OPEN IT.', 'dr_smith');
   await tween(1200, t => {
     scientist.position.x = lerp(-4, -4.8, easeInOut(t));
-    scientist.position.z = lerp(0, 0.8, easeInOut(t));
+    scientist.position.z = lerp(-4, -3.2, easeInOut(t));
   });
   await wait(2600);
   clearDialogue();
 
-  // Scientist closes in
+  // Scientist closes in on box
   showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'dr_smith');
   await tween(1000, t => {
     scientist.position.x = lerp(-4.8, -5, easeInOut(t));
-    scientist.position.z = lerp(0.8, 1.5, easeInOut(t));
+    scientist.position.z = lerp(-3.2, -2.5, easeInOut(t));
   });
   await wait(2000);
   clearDialogue();
@@ -381,11 +381,11 @@ export async function startEscapeSequence(scene, camera) {
   timmyBobActive = false;
   await tween(700, t => {
     timmy.position.x = lerp(0, -5.0, easeInOut(t));
-    timmy.position.z = lerp(0.5, 1.8, easeInOut(t));
+    timmy.position.z = lerp(0.5, -2.5, easeInOut(t));
     timmy.position.y = lerp(-7.0, -8.8, easeInOut(t)) + Math.abs(Math.sin(t * Math.PI)) * 3;
     timmy.rotation.y = lerp(Math.PI, Math.PI * 2.5, easeInOut(t));
   });
-  timmy.position.set(-5.0, -8.8, 1.8);
+  timmy.position.set(-5.0, -8.8, -2.5);
   await wait(400);
   clearDialogue();
 
@@ -428,27 +428,43 @@ export async function startEscapeSequence(scene, camera) {
   clearDialogue();
   await wait(400);
 
-  // ── Camera bolts for the door ────────────────────────────────────────────
-  const runStartX = camera.position.x;
-  const runStartZ = camera.position.z;
-  const runStartY = camera.position.y;
+  // ── Stand up and exit the box ────────────────────────────────────────────
+  // Fade out the box vignette as player rises
+  vignette.style.transition = 'opacity 0.7s ease';
+  vignette.style.opacity = '0';
 
-  await tween(2200, t => {
-    const e = easeInOut(t);
-    camera.position.x = lerp(runStartX, 0, e);
-    camera.position.z = lerp(runStartZ, -9.0, e);
-    camera.position.y = lerp(runStartY, -8.5, e);
-    camera.rotation.y = lerp(0, 0, e);
-    camera.rotation.x = lerp(0, -0.1, e);
+  const boxX = camera.position.x;
+  const boxZ = camera.position.z;
+  const boxY = camera.position.y;
+
+  // Rise to standing height
+  await tween(700, t => {
+    camera.position.y = lerp(boxY, 0, easeInOut(t));
   });
 
-  await wait(600);
+  await wait(200);
+
+  // ── Run toward the door ───────────────────────────────────────────────────
+  await tween(2400, t => {
+    const e = easeInOut(t);
+    camera.position.x = lerp(boxX, 0, e);
+    camera.position.z = lerp(boxZ, -9.0, e);
+    camera.rotation.x = lerp(0, -0.08, e);
+  });
+
+  await wait(400);
 
   // ── Fade to white ────────────────────────────────────────────────────────
-  vignette.style.transition = 'opacity 3s ease, background 3s ease';
-  vignette.style.background = 'white';
-  await wait(100);
-  vignette.style.opacity = '1';
+  const whiteOut = document.createElement('div');
+  whiteOut.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:white;opacity:0;pointer-events:none;z-index:40;
+    transition:opacity 3s ease;
+  `;
+  document.body.appendChild(whiteOut);
+  await wait(50);
+  whiteOut.style.opacity = '1';
+  vignette.remove();
   await wait(3200);
 
   // Final text overlay
