@@ -120,19 +120,7 @@ function onMouseClick(event) {
     return;
   }
 
-  // After reward: one more click on the button triggers the secret ending
-  if (rewardTriggered) {
-    if (window._escapeReady && !window._escapeActive && pointerLocked) {
-      mouse.set(0, 0);
-      raycaster.setFromCamera(mouse, camera);
-      const hit = raycaster.intersectObjects(buttonObj.clickTargets, false);
-      if (hit.length > 0) {
-        window._escapeReady = false;
-        startEscapeSequence(scene, camera);
-      }
-    }
-    return;
-  }
+  if (rewardTriggered) return;
 
   // Monster fight: any click = sword swing regardless of lock state
   if (window._monsterFight && window._monsterFight.active) {
@@ -268,8 +256,19 @@ function triggerReward() {
     eventManager.triggerReward(scene, camera, renderer);
   }, 400);
 
-  // After reward, next button click triggers the secret escape ending
-  window._escapeReady = true;
+  // Fade in the secret ending button after a short delay
+  setTimeout(() => {
+    const secretBtn = document.getElementById('secret-btn');
+    if (secretBtn) {
+      secretBtn.style.opacity = '1';
+      secretBtn.addEventListener('click', () => {
+        if (window._escapeActive) return;
+        secretBtn.style.display = 'none';
+        document.getElementById('reward-overlay').classList.remove('visible');
+        startEscapeSequence(scene, camera);
+      });
+    }
+  }, 3000);
 }
 
 // ─── Window Resize ───────────────────────────────────────────────────────────
