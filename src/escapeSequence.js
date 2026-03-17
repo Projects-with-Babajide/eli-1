@@ -356,37 +356,31 @@ export async function startEscapeSequence(scene, camera) {
   await wait(2500);
   clearDialogue();
 
-  // Scientist reaches for electrifier and advances
+  // Dr Smith tells Timmy to move — Timmy immediately leaps in front of the box
   showDialogue('STEP ASIDE, TIMMY. I NEED TO OPEN IT.', 'dr_smith');
-  await tween(1200, t => {
-    scientist.position.x = lerp(-4, -4.8, easeInOut(t));
-    scientist.position.z = lerp(-4, -3.2, easeInOut(t));
-  });
-  await wait(2600);
-  clearDialogue();
-
-  // Scientist closes in on box
-  showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'dr_smith');
-  await tween(1000, t => {
-    scientist.position.x = lerp(-4.8, -5, easeInOut(t));
-    scientist.position.z = lerp(-3.2, -2.5, easeInOut(t));
-  });
-  await wait(2000);
-  clearDialogue();
-
-  // ── Timmy intercepts ─────────────────────────────────────────────────────
-  showDialogue('NO! LEAVE THEM ALONE!', 'timmy');
-
-  // Timmy leaps from pedestal to block the scientist
   timmyBobActive = false;
   await tween(700, t => {
     timmy.position.x = lerp(0, -5.0, easeInOut(t));
-    timmy.position.z = lerp(0.5, -2.5, easeInOut(t));
+    timmy.position.z = lerp(0.5, -3.0, easeInOut(t));
     timmy.position.y = lerp(-7.0, -8.8, easeInOut(t)) + Math.abs(Math.sin(t * Math.PI)) * 3;
-    timmy.rotation.y = lerp(Math.PI, Math.PI * 2.5, easeInOut(t));
+    timmy.rotation.y = lerp(Math.PI, 0, easeInOut(t)); // face the box
   });
-  timmy.position.set(-5.0, -8.8, -2.5);
-  await wait(400);
+  timmy.position.set(-5.0, -8.8, -3.0);
+  timmy.rotation.y = 0;
+
+  await wait(800);
+  clearDialogue();
+  showDialogue('NO! LEAVE THEM ALONE!', 'timmy');
+  await wait(2800);
+  clearDialogue();
+
+  // Scientist closes in despite Timmy blocking
+  showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'dr_smith');
+  await tween(1200, t => {
+    scientist.position.x = lerp(-4, -5, easeInOut(t));
+    scientist.position.z = lerp(-4, -2.5, easeInOut(t));
+  });
+  await wait(2000);
   clearDialogue();
 
   // ── Electric shock ───────────────────────────────────────────────────────
@@ -416,6 +410,7 @@ export async function startEscapeSequence(scene, camera) {
 
   // Both Timmy and scientist crumple
   timmy.rotation.z = 1.1;
+  timmy.rotation.y = 0; // keep facing box as he falls
   timmy.position.y = -9.4;
   scientist.rotation.z = -0.9;
   scientist.position.y = -9.0;
