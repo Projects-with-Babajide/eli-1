@@ -345,10 +345,11 @@ export async function startEscapeSequence(scene, camera) {
   await wait(400);
 
   clearDialogue();
-  // Scientist walks toward the box — far enough back that player sees full scene
+  // Scientist walks toward the box — rotates to face it (+Z) as they approach
   await tween(1500, t => {
     scientist.position.x = lerp(5, -4, easeInOut(t));
     scientist.position.z = lerp(3, -4, easeInOut(t));
+    scientist.rotation.y = lerp(Math.PI * 1.5, 0, easeInOut(t));
   });
   await wait(800);
 
@@ -363,10 +364,10 @@ export async function startEscapeSequence(scene, camera) {
     timmy.position.x = lerp(0, -5.0, easeInOut(t));
     timmy.position.z = lerp(0.5, -3.0, easeInOut(t));
     timmy.position.y = lerp(-7.0, -8.8, easeInOut(t)) + Math.abs(Math.sin(t * Math.PI)) * 3;
-    timmy.rotation.y = lerp(Math.PI, 0, easeInOut(t)); // face the box
+    timmy.rotation.y = lerp(Math.PI, Math.PI, easeInOut(t)); // face the scientist (-Z)
   });
   timmy.position.set(-5.0, -8.8, -3.0);
-  timmy.rotation.y = 0;
+  timmy.rotation.y = Math.PI;
 
   await wait(800);
   clearDialogue();
@@ -374,8 +375,9 @@ export async function startEscapeSequence(scene, camera) {
   await wait(2800);
   clearDialogue();
 
-  // Scientist closes in despite Timmy blocking
+  // Scientist closes in despite Timmy blocking — keeps facing box (+Z)
   showDialogue('THIS WILL ONLY TAKE A MOMENT.', 'dr_smith');
+  scientist.rotation.y = 0;
   await tween(1200, t => {
     scientist.position.x = lerp(-4, -5, easeInOut(t));
     scientist.position.z = lerp(-4, -2.5, easeInOut(t));
@@ -410,7 +412,7 @@ export async function startEscapeSequence(scene, camera) {
 
   // Both Timmy and scientist crumple
   timmy.rotation.z = 1.1;
-  timmy.rotation.y = 0; // keep facing box as he falls
+  timmy.rotation.y = Math.PI; // keep facing scientist as he falls
   timmy.position.y = -9.4;
   scientist.rotation.z = -0.9;
   scientist.position.y = -9.0;
