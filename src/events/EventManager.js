@@ -24,6 +24,12 @@ export class EventManager {
     return event;
   }
 
+  triggerById(id, scene, camera, renderer) {
+    const event = this.allEvents.find(e => e.id === id);
+    if (event) event.play(scene, camera, renderer);
+    return event;
+  }
+
   triggerReward(scene, camera, renderer) {
     // Colorful point lights pulsing
     const lights = [];

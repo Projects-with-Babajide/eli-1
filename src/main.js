@@ -152,9 +152,17 @@ function handleButtonClick() {
   } else if (clickCount === 30) {
     congratsEvent.play(scene, camera, renderer);
     showEventName(congratsEvent.name);
+  } else if (clickCount === 41) {
+    // Timmy always appears at click 41
+    const e = eventManager.triggerById('timmy', scene, camera, renderer);
+    if (e) showEventName(e.name);
   } else if (clickCount === 50) {
     congrats50Event.play(scene, camera, renderer);
     showEventName(congrats50Event.name);
+  } else if (clickCount === 59) {
+    // Monster always attacks at click 59 — save Timmy!
+    const e = eventManager.triggerById('monster_fight', scene, camera, renderer);
+    if (e) showEventName(e.name);
   } else {
     // Trigger a random event
     const event = eventManager.triggerRandom(scene, camera, renderer);
