@@ -120,7 +120,19 @@ function onMouseClick(event) {
     return;
   }
 
-  if (rewardTriggered) return;
+  // After reward: one more click on the button triggers the secret ending
+  if (rewardTriggered) {
+    if (window._escapeReady && !window._escapeActive && pointerLocked) {
+      mouse.set(0, 0);
+      raycaster.setFromCamera(mouse, camera);
+      const hit = raycaster.intersectObjects(buttonObj.clickTargets, false);
+      if (hit.length > 0) {
+        window._escapeReady = false;
+        startEscapeSequence(scene, camera);
+      }
+    }
+    return;
+  }
 
   // Monster fight: any click = sword swing regardless of lock state
   if (window._monsterFight && window._monsterFight.active) {
@@ -256,10 +268,8 @@ function triggerReward() {
     eventManager.triggerReward(scene, camera, renderer);
   }, 400);
 
-  // Start escape sequence 10 seconds after the reward
-  setTimeout(() => {
-    startEscapeSequence(scene, camera);
-  }, 10000);
+  // After reward, next button click triggers the secret escape ending
+  window._escapeReady = true;
 }
 
 // ─── Window Resize ───────────────────────────────────────────────────────────
