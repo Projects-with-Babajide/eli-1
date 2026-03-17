@@ -167,6 +167,93 @@
       letter-spacing: 2px;
       text-transform: uppercase;
     }
+
+    /* ── Intro overlay ── */
+    #intro-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #d4c9a8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      cursor: pointer;
+      transition: opacity 0.6s ease;
+    }
+
+    #intro-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #intro-paper {
+      background: #f5f0e0;
+      width: 380px;
+      padding: 48px 52px 52px;
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.25),
+        inset 0 0 0 1px rgba(0,0,0,0.06);
+      position: relative;
+      transform: rotate(-1.2deg);
+    }
+
+    #intro-paper::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 60px; height: 14px;
+      background: rgba(200,190,160,0.7);
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    #intro-paper h2 {
+      font-size: 11px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 28px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+    }
+
+    .intro-field {
+      display: flex;
+      margin-bottom: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .intro-label {
+      color: #888;
+      min-width: 110px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding-top: 1px;
+    }
+
+    .intro-value {
+      color: #222;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .intro-notes .intro-value {
+      font-weight: normal;
+      font-style: italic;
+      color: #444;
+    }
+
+    #intro-paper .intro-start {
+      margin-top: 36px;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #aaa;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -177,12 +264,43 @@
     <div id="hint">CLICK TO LOOK AROUND</div>
   </div>
 
+  <!-- Intro paper -->
+  <div id="intro-overlay">
+    <div id="intro-paper">
+      <h2>Experiment File</h2>
+      <div class="intro-field">
+        <span class="intro-label">Name</span>
+        <span class="intro-value">Subject 6024</span>
+      </div>
+      <div class="intro-field">
+        <span class="intro-label">Age</span>
+        <span class="intro-value">24</span>
+      </div>
+      <div class="intro-field">
+        <span class="intro-label">Experiment</span>
+        <span class="intro-value">The Box</span>
+      </div>
+      <div class="intro-field intro-notes">
+        <span class="intro-label">Notes</span>
+        <span class="intro-value">If anything goes wrong add Timmy.</span>
+      </div>
+      <p class="intro-start">click anywhere to begin</p>
+    </div>
+  </div>
+
   <div id="reward-overlay">
     <div id="reward-title">YOU DID IT. 100 CLICKS.</div>
     <div id="reward-subtitle">here's your reward: nothing. and everything.</div>
     <button id="secret-btn">??? secret ending ???</button>
   </div>
 
+  <script>
+    const introOverlay = document.getElementById('intro-overlay');
+    introOverlay.addEventListener('click', () => {
+      introOverlay.classList.add('fade-out');
+      setTimeout(() => introOverlay.remove(), 650);
+    });
+  </script>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>
