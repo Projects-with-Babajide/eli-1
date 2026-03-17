@@ -3,6 +3,7 @@ import { createRoom } from './room.js';
 import { createButton } from './button.js';
 import { EventManager } from './events/EventManager.js';
 import { congratsEvent, congrats50Event } from './events/events.js';
+import { startEscapeSequence } from './escapeSequence.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -107,6 +108,18 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 function onMouseClick(event) {
+  // Escape sequence: box click works even after reward
+  if (window._escapeBoxActive && pointerLocked) {
+    mouse.set(0, 0);
+    raycaster.setFromCamera(mouse, camera);
+    const hit = raycaster.intersectObject(window._escapeBoxActive, true);
+    if (hit.length > 0 && window._onBoxClick) {
+      window._onBoxClick();
+      window._escapeBoxActive = null;
+    }
+    return;
+  }
+
   if (rewardTriggered) return;
 
   // Monster fight: any click = sword swing regardless of lock state
@@ -242,6 +255,11 @@ function triggerReward() {
   setTimeout(() => {
     eventManager.triggerReward(scene, camera, renderer);
   }, 400);
+
+  // Start escape sequence 20 seconds after the reward
+  setTimeout(() => {
+    startEscapeSequence(scene, camera);
+  }, 20000);
 }
 
 // ─── Window Resize ───────────────────────────────────────────────────────────
@@ -292,10 +310,12 @@ function animate() {
   const rx =  Math.cos(yaw);
   const rz = -Math.sin(yaw);
 
-  if (keys['ArrowUp']    || keys['KeyW']) { camera.position.x += fx * MOVE_SPEED; camera.position.z += fz * MOVE_SPEED; }
-  if (keys['ArrowDown']  || keys['KeyS']) { camera.position.x -= fx * MOVE_SPEED; camera.position.z -= fz * MOVE_SPEED; }
-  if (keys['ArrowRight'] || keys['KeyD']) { camera.position.x += rx * MOVE_SPEED; camera.position.z += rz * MOVE_SPEED; }
-  if (keys['ArrowLeft']  || keys['KeyA']) { camera.position.x -= rx * MOVE_SPEED; camera.position.z -= rz * MOVE_SPEED; }
+  if (!window._movementLocked) {
+    if (keys['ArrowUp']    || keys['KeyW']) { camera.position.x += fx * MOVE_SPEED; camera.position.z += fz * MOVE_SPEED; }
+    if (keys['ArrowDown']  || keys['KeyS']) { camera.position.x -= fx * MOVE_SPEED; camera.position.z -= fz * MOVE_SPEED; }
+    if (keys['ArrowRight'] || keys['KeyD']) { camera.position.x += rx * MOVE_SPEED; camera.position.z += rz * MOVE_SPEED; }
+    if (keys['ArrowLeft']  || keys['KeyA']) { camera.position.x -= rx * MOVE_SPEED; camera.position.z -= rz * MOVE_SPEED; }
+  }
 
   // Clamp inside the room
   camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
