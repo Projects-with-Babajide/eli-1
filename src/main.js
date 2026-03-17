@@ -55,6 +55,18 @@ const eventNameEl = document.getElementById('event-name');
 const hintEl      = document.getElementById('hint');
 const crosshairEl = document.getElementById('crosshair');
 
+// Timmy interact hint
+const interactHintEl = document.createElement('div');
+interactHintEl.style.cssText = `
+  position:fixed;top:calc(50% + 22px);left:50%;transform:translateX(-50%);
+  color:rgba(255,255,255,0.85);font-family:'Courier New',monospace;
+  font-size:11px;letter-spacing:3px;text-transform:uppercase;
+  background:rgba(0,0,0,0.55);padding:4px 12px;border-radius:2px;
+  pointer-events:none;display:none;z-index:15;
+`;
+interactHintEl.textContent = 'click to interact';
+document.body.appendChild(interactHintEl);
+
 // ─── Pointer Lock Mouse Look ──────────────────────────────────────────────────
 
 let pointerLocked = false;
@@ -343,6 +355,16 @@ function animate() {
   // Subtle idle button glow pulse
   if (buttonObj.buttonGlow) {
     buttonObj.buttonGlow.intensity = 0.4 + Math.sin(time * 2) * 0.15;
+  }
+
+  // Show "click to interact" when crosshair is over Timmy
+  if (window._timmyGroup && !window._timmyDialogueActive && pointerLocked && !rewardTriggered) {
+    const hoverMouse = new THREE.Vector2(0, 0);
+    raycaster.setFromCamera(hoverMouse, camera);
+    const tHit = raycaster.intersectObject(window._timmyGroup, true);
+    interactHintEl.style.display = tHit.length > 0 ? 'block' : 'none';
+  } else {
+    interactHintEl.style.display = 'none';
   }
 
   renderer.render(scene, camera);

@@ -1362,6 +1362,14 @@ const events = [
       book.position.set(0.5, 0.1, 0.3); book.rotation.y = -0.4; g.add(book);
       const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.04, 0.8, 8), grayMat);
       tail.position.set(-0.3, -0.3, -0.4); tail.rotation.z = 0.8; tail.rotation.x = 0.5; g.add(tail);
+      // Invisible hitbox so the player can click Timmy reliably from a distance
+      const hitbox = new THREE.Mesh(
+        new THREE.SphereGeometry(1.1, 8, 8),
+        new THREE.MeshBasicMaterial({ visible: false })
+      );
+      hitbox.position.set(0, 0.3, 0);
+      g.add(hitbox);
+
       g.position.set(-8.5, -8.8, -8.5); g.rotation.y = Math.PI / 4; g.scale.setScalar(1.4);
       scene.add(g);
       window._timmyGroup = g;
