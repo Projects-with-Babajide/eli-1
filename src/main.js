@@ -256,7 +256,20 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('click', onMouseClick);
 
+// ─── Keyboard Movement ───────────────────────────────────────────────────────
+
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  // Prevent arrow keys from scrolling the page
+  if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
 // ─── Animation Loop ──────────────────────────────────────────────────────────
+
+const MOVE_SPEED = 0.1;
+const ROOM_LIMIT = 8.5; // stay inside ±8.5 on X and Z (walls at ±10)
 
 let time = 0;
 
@@ -269,6 +282,24 @@ function animate() {
     camera.rotation.y = window._camYaw;
     camera.rotation.x = window._camPitch;
   }
+
+  // ── WASD / Arrow key movement ─────────────────────────────────────────────
+  const yaw = window._camYaw || 0;
+  // Forward vector on the XZ plane based on current yaw
+  const fx = -Math.sin(yaw);
+  const fz = -Math.cos(yaw);
+  // Right-strafe vector (perpendicular to forward)
+  const rx =  Math.cos(yaw);
+  const rz = -Math.sin(yaw);
+
+  if (keys['ArrowUp']    || keys['KeyW']) { camera.position.x += fx * MOVE_SPEED; camera.position.z += fz * MOVE_SPEED; }
+  if (keys['ArrowDown']  || keys['KeyS']) { camera.position.x -= fx * MOVE_SPEED; camera.position.z -= fz * MOVE_SPEED; }
+  if (keys['ArrowRight'] || keys['KeyD']) { camera.position.x += rx * MOVE_SPEED; camera.position.z += rz * MOVE_SPEED; }
+  if (keys['ArrowLeft']  || keys['KeyA']) { camera.position.x -= rx * MOVE_SPEED; camera.position.z -= rz * MOVE_SPEED; }
+
+  // Clamp inside the room
+  camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
+  camera.position.z = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.z));
 
   // Subtle idle button glow pulse
   if (buttonObj.buttonGlow) {
