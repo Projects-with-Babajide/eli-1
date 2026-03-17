@@ -524,11 +524,13 @@ const events = [
     id: 'spin',
     name: 'SPINNING',
     play(scene, camera) {
-      const origY = camera.rotation.y;
+      window._camOverride = true;
+      const origYaw = window._camYaw || 0;
       animate(2000, (t) => {
-        camera.rotation.y = origY + Math.PI * 2 * t;
+        camera.rotation.y = origYaw + Math.PI * 2 * t;
       }, () => {
-        camera.rotation.y = origY;
+        window._camYaw = origYaw; // full circle — back where we started
+        window._camOverride = false;
       });
     },
   },
@@ -1663,7 +1665,8 @@ const events = [
         m.position.set(0.9 + i * 0.06, 0.95 + Math.sin(i * 1.2) * 0.18, 0.05); g.add(m);
       });
 
-      g.position.set(-10, -1, -2);
+      // z=4 puts it between the camera (z=8) and centre — clearly in view
+      g.position.set(-10, 0, 4);
       scene.add(g);
 
       // Rainbow fart particles as it flies
@@ -1679,7 +1682,7 @@ const events = [
             new THREE.SphereGeometry(rand(0.08, 0.22), 6, 6),
             new THREE.MeshLambertMaterial({ color: new THREE.Color().setHSL(hue, 1, 0.6), emissive: new THREE.Color().setHSL(hue, 1, 0.4), emissiveIntensity: 0.5, transparent: true, opacity: 0.9 })
           );
-          p.position.set(g.position.x - 0.8, g.position.y + rand(-0.4, 0.4), g.position.z + rand(-0.3, 0.3));
+          p.position.set(g.position.x - 0.8, g.position.y + rand(-0.4, 0.4), 4 + rand(-0.3, 0.3));
           scene.add(p);
           animate(1200, t => { p.position.y += 0.005; p.material.opacity = 1 - t; }, () => scene.remove(p));
         }
@@ -1689,7 +1692,7 @@ const events = [
 
       animate(3000, t => {
         g.position.x = lerp(-10, 11, easeInOut(t));
-        g.position.y = -1 + Math.sin(t * Math.PI * 2) * 0.6;
+        g.position.y = Math.sin(t * Math.PI * 2) * 0.6;
         g.rotation.y = Math.sin(t * 5) * 0.05;
       }, () => {
         trailActive = false;

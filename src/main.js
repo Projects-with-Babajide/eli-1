@@ -26,8 +26,13 @@ const camera = new THREE.PerspectiveCamera(
   100
 );
 camera.position.set(0, 0, 8);
-camera.lookAt(0, -7.5, 0); // Look slightly down toward button
-scene.add(camera); // Add to scene so camera.add() works for message event
+camera.rotation.order = 'YXZ'; // Standard FPS rotation order
+// Initial look: slightly down toward button (matches old lookAt(0,-7.5,0))
+window._camYaw   = 0;
+window._camPitch = -0.75;
+window._camOverride = false;
+camera.rotation.set(window._camPitch, window._camYaw, 0);
+scene.add(camera);
 
 // ─── Room ────────────────────────────────────────────────────────────────────
 
@@ -43,9 +48,34 @@ const eventManager = new EventManager();
 
 // ─── HUD References ──────────────────────────────────────────────────────────
 
-const counterEl = document.getElementById('counter');
+const counterEl  = document.getElementById('counter');
 const eventNameEl = document.getElementById('event-name');
-const hintEl = document.getElementById('hint');
+const hintEl      = document.getElementById('hint');
+const crosshairEl = document.getElementById('crosshair');
+
+// ─── Pointer Lock Mouse Look ──────────────────────────────────────────────────
+
+let pointerLocked = false;
+const SENSITIVITY = 0.0018;
+
+if (hintEl) hintEl.textContent = 'CLICK TO LOOK AROUND';
+
+renderer.domElement.addEventListener('click', () => {
+  if (!pointerLocked) renderer.domElement.requestPointerLock();
+});
+
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === renderer.domElement;
+  if (crosshairEl) crosshairEl.style.opacity = pointerLocked ? '0.7' : '0.3';
+  if (hintEl && !pointerLocked) hintEl.textContent = 'CLICK TO LOOK AROUND';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!pointerLocked) return;
+  window._camYaw   -= e.movementX * SENSITIVITY;
+  window._camPitch -= e.movementY * SENSITIVITY;
+  window._camPitch  = Math.max(-1.4, Math.min(0.5, window._camPitch));
+});
 
 let clickCount = 0;
 let rewardTriggered = false;
@@ -79,22 +109,21 @@ const mouse = new THREE.Vector2();
 function onMouseClick(event) {
   if (rewardTriggered) return;
 
-  // Monster fight mode: any click = sword swing, button disabled
+  // Monster fight: any click = sword swing regardless of lock state
   if (window._monsterFight && window._monsterFight.active) {
     if (window._monsterFight.onSwing) window._monsterFight.onSwing();
     return;
   }
 
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  // While pointer is not locked the click was used to lock — don't fire button
+  if (!pointerLocked) return;
 
+  // Pointer is locked: aim is always the crosshair (screen centre)
+  mouse.set(0, 0);
   raycaster.setFromCamera(mouse, camera);
 
   const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
-
-  if (intersects.length > 0) {
-    handleButtonClick();
-  }
+  if (intersects.length > 0) handleButtonClick();
 }
 
 function handleButtonClick() {
@@ -219,16 +248,6 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('click', onMouseClick);
 
-// Cursor style — pointer when hovering button
-window.addEventListener('mousemove', (event) => {
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  raycaster.setFromCamera(mouse, camera);
-  const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
-  document.body.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
-});
-
 // ─── Animation Loop ──────────────────────────────────────────────────────────
 
 let time = 0;
@@ -236,6 +255,12 @@ let time = 0;
 function animate() {
   requestAnimationFrame(animate);
   time += 0.016;
+
+  // Apply mouse-look (events can set window._camOverride to take control)
+  if (!window._camOverride) {
+    camera.rotation.y = window._camYaw;
+    camera.rotation.x = window._camPitch;
+  }
 
   // Subtle idle button glow pulse
   if (buttonObj.buttonGlow) {
