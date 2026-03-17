@@ -4,6 +4,7 @@ import { createButton } from './button.js';
 import { EventManager } from './events/EventManager.js';
 import { congratsEvent, congrats50Event } from './events/events.js';
 import { startEscapeSequence } from './escapeSequence.js';
+import { openTimmyDialogue } from './timmyDialogue.js';
 
 // ─── Renderer ────────────────────────────────────────────────────────────────
 
@@ -134,6 +135,15 @@ function onMouseClick(event) {
   // Pointer is locked: aim is always the crosshair (screen centre)
   mouse.set(0, 0);
   raycaster.setFromCamera(mouse, camera);
+
+  // Check Timmy first — clicking him opens dialogue instead of pressing the button
+  if (window._timmyGroup && !window._timmyDialogueActive) {
+    const timmyHit = raycaster.intersectObject(window._timmyGroup, true);
+    if (timmyHit.length > 0) {
+      openTimmyDialogue();
+      return;
+    }
+  }
 
   const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
   if (intersects.length > 0) handleButtonClick();
