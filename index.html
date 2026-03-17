@@ -353,6 +353,9 @@
     const lines = [
       { speaker: '???',       color: unknownColor, text: 'who am I?\nWhere am I?\nWhat is going on?\nI want to go home.' },
       { speaker: 'DR. SMITH', color: smithColor,   text: 'You will go home...\nsoon.' },
+      { speaker: '???',       color: unknownColor, text: 'But why not now?\nI have someone waiting for me...\nWHY DONT I REMEMBER WHO' },
+      { speaker: 'DR. SMITH', color: smithColor,   text: 'It is time you go to sleep.' },
+      { speaker: '???',       color: unknownColor, text: '*thud*', duration: 2500 },
     ];
 
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -362,7 +365,7 @@
       for (const line of lines) {
         preLine.innerHTML = `<span style="color:${line.color}">[${line.speaker}]</span>  ${line.text}`;
         preLine.classList.add('visible');
-        await wait(3800);
+        await wait(line.duration ?? 3800);
         preLine.classList.remove('visible');
         await wait(600);
       }
