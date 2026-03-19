@@ -488,6 +488,9 @@ export async function startEscapeSequence(scene, camera) {
     <div style="font-size:13px;letter-spacing:4px;color:#888;margin-top:8px;">
       you never found out.
     </div>
+    <div style="font-size:11px;letter-spacing:3px;color:#aaa;margin-top:32px;">
+      the truth will come out soon.
+    </div>
   `;
   document.body.appendChild(endScreen);
   await wait(100);
