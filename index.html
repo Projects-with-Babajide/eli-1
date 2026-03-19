@@ -263,15 +263,10 @@
       letter-spacing: 2px;
     }
 
-    #final-msg-overlay .fm-timmy-art {
+    #final-msg-overlay #timmy-canvas {
       margin-top: 10px;
-      font-size: 28px;
-      animation: timmy-bounce 0.5s ease-in-out infinite alternate;
-    }
-
-    @keyframes timmy-bounce {
-      from { transform: translateY(0); }
-      to   { transform: translateY(-18px); }
+      width: 200px;
+      height: 200px;
     }
 
     #final-msg-overlay .fm-continue {
@@ -490,7 +485,7 @@
     <div class="fm-title">Final Message I Swear</div>
     <div class="fm-text">Thanks for playing the game</div>
     <div class="fm-timmy">— Timmy</div>
-    <div class="fm-timmy-art">&#x1F42D;</div>
+    <canvas id="timmy-canvas"></canvas>
     <div class="fm-continue">click anywhere to continue</div>
   </div>
 
@@ -585,16 +580,23 @@
       }, 650);
     });
 
+    let stopTimmyPreview = null;
+
     suggestionOverlay.addEventListener('click', () => {
       suggestionOverlay.classList.add('fade-out');
-      setTimeout(() => {
+      setTimeout(async () => {
         suggestionOverlay.remove();
         finalMsgOverlay.classList.add('visible');
+        // Start 3D Timmy
+        const { initTimmyPreview } = await import('./src/timmyPreview.js');
+        const canvas = document.getElementById('timmy-canvas');
+        if (canvas) stopTimmyPreview = initTimmyPreview(canvas);
       }, 650);
     });
 
     finalMsgOverlay.addEventListener('click', () => {
       finalMsgOverlay.classList.add('fade-out');
+      if (stopTimmyPreview) stopTimmyPreview();
       setTimeout(() => {
         finalMsgOverlay.remove();
         runPreDialogue();
