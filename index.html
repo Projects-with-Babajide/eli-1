@@ -221,6 +221,67 @@
       margin-top: 48px;
     }
 
+    /* ── Final message screen ── */
+    #final-msg-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 340;
+      cursor: pointer;
+      transition: opacity 0.6s ease;
+      display: none;
+    }
+
+    #final-msg-overlay.visible { display: flex; }
+    #final-msg-overlay.fade-out { opacity: 0; pointer-events: none; }
+
+    #final-msg-overlay .fm-title {
+      color: #fff;
+      font-size: 22px;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    #final-msg-overlay .fm-text {
+      color: #ccc;
+      font-size: 16px;
+      letter-spacing: 2px;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    #final-msg-overlay .fm-timmy {
+      margin-top: 30px;
+      font-size: 13px;
+      color: #88aaff;
+      letter-spacing: 2px;
+    }
+
+    #final-msg-overlay .fm-timmy-art {
+      margin-top: 10px;
+      font-size: 28px;
+      animation: timmy-bounce 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes timmy-bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-18px); }
+    }
+
+    #final-msg-overlay .fm-continue {
+      color: rgba(255,255,255,0.25);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 40px;
+    }
+
     /* ── Suggestion screen ── */
     #suggestion-overlay {
       position: fixed;
@@ -424,6 +485,15 @@
     <div class="warn-continue">click anywhere to continue</div>
   </div>
 
+  <!-- Final message screen -->
+  <div id="final-msg-overlay">
+    <div class="fm-title">Final Message I Swear</div>
+    <div class="fm-text">Thanks for playing the game</div>
+    <div class="fm-timmy">— Timmy</div>
+    <div class="fm-timmy-art">&#x1F42D;</div>
+    <div class="fm-continue">click anywhere to continue</div>
+  </div>
+
   <!-- Suggestion screen -->
   <div id="suggestion-overlay">
     <div class="sug-title">Suggestion</div>
@@ -504,8 +574,9 @@
     }
 
     const suggestionOverlay = document.getElementById('suggestion-overlay');
+    const finalMsgOverlay  = document.getElementById('final-msg-overlay');
 
-    // Warning → Suggestion → Dialogue
+    // Warning → Suggestion → Final Message → Dialogue
     warningOverlay.addEventListener('click', () => {
       warningOverlay.classList.add('fade-out');
       setTimeout(() => {
@@ -518,6 +589,14 @@
       suggestionOverlay.classList.add('fade-out');
       setTimeout(() => {
         suggestionOverlay.remove();
+        finalMsgOverlay.classList.add('visible');
+      }, 650);
+    });
+
+    finalMsgOverlay.addEventListener('click', () => {
+      finalMsgOverlay.classList.add('fade-out');
+      setTimeout(() => {
+        finalMsgOverlay.remove();
         runPreDialogue();
       }, 650);
     });
