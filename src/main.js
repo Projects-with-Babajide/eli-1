@@ -58,7 +58,7 @@ wallPromptEl.style.cssText = `
   border:1px solid rgba(136,170,255,0.4);text-align:center;
   line-height:1.6;
 `;
-wallPromptEl.innerHTML = 'do you want to enter?<br><span style="font-size:10px;color:#888;letter-spacing:2px;">click to enter</span>';
+wallPromptEl.innerHTML = 'do you want to enter?<br><span style="font-size:10px;color:#888;letter-spacing:2px;">press E to enter</span>';
 document.body.appendChild(wallPromptEl);
 
 function isNearRightWall() {
@@ -182,16 +182,6 @@ function onMouseClick(event) {
   // Near Timmy? Clicking opens dialogue instead of pressing the button
   if (isNearTimmy() && !window._timmyDialogueActive) {
     openTimmyDialogue();
-    return;
-  }
-
-  // Near right wall? Click to skip to escape ending
-  if (isNearRightWall()) {
-    rewardTriggered = true;
-    wallPromptEl.style.display = 'none';
-    if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
-    if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
-    startEscapeSequence(scene, camera);
     return;
   }
 
@@ -350,6 +340,14 @@ window.addEventListener('keydown', e => {
   keys[e.code] = true;
   // Prevent arrow keys from scrolling the page
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  // Press E near the right wall to skip to escape ending
+  if (e.code === 'KeyE' && isNearRightWall()) {
+    rewardTriggered = true;
+    wallPromptEl.style.display = 'none';
+    if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
+    if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
+    startEscapeSequence(scene, camera);
+  }
 });
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -391,7 +389,7 @@ function animate() {
   camera.position.z = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.z));
 
   // Show prompt near the right wall
-  if (isNearRightWall() && pointerLocked) {
+  if (isNearRightWall()) {
     wallPromptEl.style.display = 'block';
   } else {
     wallPromptEl.style.display = 'none';
