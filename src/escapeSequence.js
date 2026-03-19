@@ -432,9 +432,9 @@ export async function startEscapeSequence(scene, camera) {
 
   const boxY = camera.position.y;
 
-  // Smoothly rise to standing height
+  // Smoothly rise to standing height (floor at y=-10, eye level ≈ y=-7)
   await tween(900, t => {
-    camera.position.y = lerp(boxY, 0, easeInOut(t));
+    camera.position.y = lerp(boxY, -7, easeInOut(t));
   });
 
   // Give the player full control — they run to the door themselves
