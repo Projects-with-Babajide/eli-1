@@ -168,6 +168,59 @@
       text-transform: uppercase;
     }
 
+    /* ── Epilepsy warning ── */
+    #warning-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 400;
+      cursor: pointer;
+      transition: opacity 0.6s ease;
+    }
+
+    #warning-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #warning-overlay .warn-title {
+      color: #cc2222;
+      font-size: 28px;
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+    }
+
+    #warning-overlay .warn-text {
+      color: #ccc;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-align: center;
+      line-height: 1.8;
+      max-width: 500px;
+    }
+
+    #warning-overlay .warn-discretion {
+      color: #fff;
+      font-size: 12px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      margin-top: 32px;
+    }
+
+    #warning-overlay .warn-continue {
+      color: rgba(255,255,255,0.25);
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 48px;
+    }
+
     /* ── Pre-file dialogue ── */
     #pre-dialogue {
       position: fixed;
@@ -307,6 +360,14 @@
     <div id="hint">CLICK TO LOOK AROUND</div>
   </div>
 
+  <!-- Epilepsy warning -->
+  <div id="warning-overlay">
+    <div class="warn-title">Warning</div>
+    <div class="warn-text">This game may trigger seizures in people with photosensitive epilepsy.</div>
+    <div class="warn-discretion">Viewer Discretion Advised</div>
+    <div class="warn-continue">click anywhere to continue</div>
+  </div>
+
   <!-- Pre-file dialogue -->
   <div id="pre-dialogue">
     <div class="pre-line" id="pre-line-1"></div>
@@ -343,6 +404,7 @@
   </div>
 
   <script>
+    const warningOverlay = document.getElementById('warning-overlay');
     const preDlg   = document.getElementById('pre-dialogue');
     const preLine  = document.getElementById('pre-line-1');
     const introOverlay = document.getElementById('intro-overlay');
@@ -377,7 +439,14 @@
       setTimeout(() => preDlg.remove(), 900);
     }
 
-    runPreDialogue();
+    // Warning must be dismissed before dialogue starts
+    warningOverlay.addEventListener('click', () => {
+      warningOverlay.classList.add('fade-out');
+      setTimeout(() => {
+        warningOverlay.remove();
+        runPreDialogue();
+      }, 650);
+    });
 
     introOverlay.addEventListener('click', () => {
       introOverlay.classList.add('fade-out');
