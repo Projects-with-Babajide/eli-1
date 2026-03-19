@@ -44,9 +44,44 @@ createRoom(scene);
 
 const buttonObj = createButton(scene);
 
-// ─── Right wall skip prompt ──────────────────────────────────────────────────
+// ─── Secret door on right wall (skip to escape ending) ──────────────────────
 
-const RIGHT_WALL_THRESHOLD = 6.5; // x > this = near the right wall
+// Glowing blue panel on the right wall so the player can see it
+const secretDoorGroup = new THREE.Group();
+// Back plate
+const secretDoorPlate = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.5, 3.5),
+  new THREE.MeshLambertMaterial({ color: 0x1a1a2e, emissive: 0x0a0a1a, side: THREE.DoubleSide })
+);
+secretDoorPlate.rotation.y = -Math.PI / 2; // face inward from right wall
+secretDoorPlate.position.set(9.85, -7, 0);
+secretDoorGroup.add(secretDoorPlate);
+// Glowing blue frame
+const frameMat = new THREE.MeshLambertMaterial({ color: 0x3366ff, emissive: 0x2244cc, emissiveIntensity: 0.8 });
+[[-1.25, 0, 0.08], [1.25, 0, 0.08]].forEach(([dy, dz, w]) => {
+  const bar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.5, 0.12), frameMat);
+  bar.position.set(9.85, -7 + dy * 0, 0 + dy);
+  // vertical bars on left/right of door
+});
+// Simpler: just add a glowing border with 4 bars
+const bW = 0.1, bH = 3.5, bD = 0.1;
+const topBar = new THREE.Mesh(new THREE.BoxGeometry(bD, bW, 2.5), frameMat);
+topBar.position.set(9.85, -5.25, 0);
+const botBar = new THREE.Mesh(new THREE.BoxGeometry(bD, bW, 2.5), frameMat);
+botBar.position.set(9.85, -8.75, 0);
+const leftBar = new THREE.Mesh(new THREE.BoxGeometry(bD, bH, bW), frameMat);
+leftBar.position.set(9.85, -7, -1.25);
+const rightBar = new THREE.Mesh(new THREE.BoxGeometry(bD, bH, bW), frameMat);
+rightBar.position.set(9.85, -7, 1.25);
+secretDoorGroup.add(topBar, botBar, leftBar, rightBar);
+// Blue glow light
+const secretDoorGlow = new THREE.PointLight(0x3366ff, 0.5, 8);
+secretDoorGlow.position.set(9, -7, 0);
+secretDoorGroup.add(secretDoorGlow);
+scene.add(secretDoorGroup);
+
+const DOOR_INTERACT_RANGE = 4.0;
+const doorPos = new THREE.Vector3(9.85, -7, 0);
 
 const wallPromptEl = document.createElement('div');
 wallPromptEl.style.cssText = `
@@ -61,8 +96,11 @@ wallPromptEl.style.cssText = `
 wallPromptEl.innerHTML = 'do you want to enter?<br><span style="font-size:10px;color:#888;letter-spacing:2px;">press E to enter</span>';
 document.body.appendChild(wallPromptEl);
 
-function isNearRightWall() {
-  return camera.position.x > RIGHT_WALL_THRESHOLD && !rewardTriggered && !window._escapeActive;
+function isNearSecretDoor() {
+  if (rewardTriggered || window._escapeActive) return false;
+  const dx = camera.position.x - doorPos.x;
+  const dz = camera.position.z - doorPos.z;
+  return Math.sqrt(dx * dx + dz * dz) < DOOR_INTERACT_RANGE;
 }
 
 // ─── Event Manager ───────────────────────────────────────────────────────────
@@ -340,8 +378,8 @@ window.addEventListener('keydown', e => {
   keys[e.code] = true;
   // Prevent arrow keys from scrolling the page
   if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
-  // Press E near the right wall to skip to escape ending
-  if (e.code === 'KeyE' && isNearRightWall()) {
+  // Press E near the secret door to skip to escape ending
+  if (e.code === 'KeyE' && isNearSecretDoor()) {
     rewardTriggered = true;
     wallPromptEl.style.display = 'none';
     if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
@@ -388,8 +426,8 @@ function animate() {
   camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
   camera.position.z = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.z));
 
-  // Show prompt near the right wall
-  if (isNearRightWall()) {
+  // Show prompt near the secret door
+  if (isNearSecretDoor()) {
     wallPromptEl.style.display = 'block';
   } else {
     wallPromptEl.style.display = 'none';
