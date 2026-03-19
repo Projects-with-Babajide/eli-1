@@ -60,12 +60,22 @@ const interactHintEl = document.createElement('div');
 interactHintEl.style.cssText = `
   position:fixed;top:calc(50% + 22px);left:50%;transform:translateX(-50%);
   color:rgba(255,255,255,0.85);font-family:'Courier New',monospace;
-  font-size:11px;letter-spacing:3px;text-transform:uppercase;
-  background:rgba(0,0,0,0.55);padding:4px 12px;border-radius:2px;
+  font-size:13px;letter-spacing:3px;text-transform:uppercase;
+  background:rgba(0,0,0,0.65);padding:6px 16px;border-radius:3px;
   pointer-events:none;display:none;z-index:15;
+  border:1px solid rgba(136,170,255,0.3);
 `;
-interactHintEl.textContent = 'click to interact';
+interactHintEl.textContent = 'talk';
 document.body.appendChild(interactHintEl);
+
+const TIMMY_INTERACT_RANGE = 5.0; // distance threshold to interact with Timmy
+
+function isNearTimmy() {
+  if (!window._timmyGroup) return false;
+  const dx = camera.position.x - window._timmyGroup.position.x;
+  const dz = camera.position.z - window._timmyGroup.position.z;
+  return Math.sqrt(dx * dx + dz * dz) < TIMMY_INTERACT_RANGE;
+}
 
 // ─── Pointer Lock Mouse Look ──────────────────────────────────────────────────
 
@@ -148,13 +158,10 @@ function onMouseClick(event) {
   mouse.set(0, 0);
   raycaster.setFromCamera(mouse, camera);
 
-  // Check Timmy first — clicking him opens dialogue instead of pressing the button
-  if (window._timmyGroup && !window._timmyDialogueActive) {
-    const timmyHit = raycaster.intersectObject(window._timmyGroup, true);
-    if (timmyHit.length > 0) {
-      openTimmyDialogue();
-      return;
-    }
+  // Near Timmy? Clicking opens dialogue instead of pressing the button
+  if (isNearTimmy() && !window._timmyDialogueActive) {
+    openTimmyDialogue();
+    return;
   }
 
   const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
@@ -357,12 +364,9 @@ function animate() {
     buttonObj.buttonGlow.intensity = 0.4 + Math.sin(time * 2) * 0.15;
   }
 
-  // Show "click to interact" when crosshair is over Timmy
-  if (window._timmyGroup && !window._timmyDialogueActive && pointerLocked && !rewardTriggered) {
-    const hoverMouse = new THREE.Vector2(0, 0);
-    raycaster.setFromCamera(hoverMouse, camera);
-    const tHit = raycaster.intersectObject(window._timmyGroup, true);
-    interactHintEl.style.display = tHit.length > 0 ? 'block' : 'none';
+  // Show "talk" when player is near Timmy
+  if (isNearTimmy() && !window._timmyDialogueActive && pointerLocked && !rewardTriggered) {
+    interactHintEl.style.display = 'block';
   } else {
     interactHintEl.style.display = 'none';
   }
