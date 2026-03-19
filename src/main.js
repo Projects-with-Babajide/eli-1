@@ -44,6 +44,27 @@ createRoom(scene);
 
 const buttonObj = createButton(scene);
 
+// ─── Wall Skip Button (hidden shortcut to ending) ───────────────────────────
+
+const wallBtnGroup = new THREE.Group();
+// Small dark button on the right wall (x = +9.9)
+const wallBtnMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.25, 0.25, 0.06, 16),
+  new THREE.MeshLambertMaterial({ color: 0x333333, emissive: 0x111111 })
+);
+wallBtnMesh.rotation.z = Math.PI / 2;
+wallBtnMesh.position.set(9.9, -5, -4);
+wallBtnGroup.add(wallBtnMesh);
+// Small ring around it
+const wallBtnRing = new THREE.Mesh(
+  new THREE.TorusGeometry(0.3, 0.03, 8, 24),
+  new THREE.MeshLambertMaterial({ color: 0x555555 })
+);
+wallBtnRing.rotation.z = Math.PI / 2;
+wallBtnRing.position.copy(wallBtnMesh.position);
+wallBtnGroup.add(wallBtnRing);
+scene.add(wallBtnGroup);
+
 // ─── Event Manager ───────────────────────────────────────────────────────────
 
 const eventManager = new EventManager();
@@ -161,6 +182,18 @@ function onMouseClick(event) {
   // Near Timmy? Clicking opens dialogue instead of pressing the button
   if (isNearTimmy() && !window._timmyDialogueActive) {
     openTimmyDialogue();
+    return;
+  }
+
+  // Check wall skip button
+  const wallHit = raycaster.intersectObjects(wallBtnGroup.children, true);
+  if (wallHit.length > 0 && !window._escapeActive) {
+    rewardTriggered = true;
+    // Remove Timmy and banana if present
+    if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
+    if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
+    scene.remove(wallBtnGroup);
+    startEscapeSequence(scene, camera);
     return;
   }
 
