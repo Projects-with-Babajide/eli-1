@@ -44,58 +44,26 @@ createRoom(scene);
 
 const buttonObj = createButton(scene);
 
-// ─── Secret Room (through right wall) ────────────────────────────────────────
+// ─── Right wall skip prompt ──────────────────────────────────────────────────
 
-const SECRET_ROOM_X = 30; // centre of the secret room (20 units past the main room wall)
-const secretRoomGroup = new THREE.Group();
+const RIGHT_WALL_THRESHOLD = 6.5; // x > this = near the right wall
 
-// White box room (same size as main room)
-const secretRoomBox = new THREE.Mesh(
-  new THREE.BoxGeometry(20, 20, 20),
-  new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.BackSide })
-);
-secretRoomBox.position.set(SECRET_ROOM_X, 0, 0);
-secretRoomGroup.add(secretRoomBox);
+const wallPromptEl = document.createElement('div');
+wallPromptEl.style.cssText = `
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  color:#fff;font-family:'Courier New',monospace;
+  font-size:15px;letter-spacing:3px;text-transform:uppercase;
+  background:rgba(0,0,0,0.7);padding:12px 24px;border-radius:3px;
+  pointer-events:none;display:none;z-index:15;
+  border:1px solid rgba(136,170,255,0.4);text-align:center;
+  line-height:1.6;
+`;
+wallPromptEl.innerHTML = 'do you want to enter?<br><span style="font-size:10px;color:#888;letter-spacing:2px;">click to enter</span>';
+document.body.appendChild(wallPromptEl);
 
-// Light inside the secret room
-const secretLight = new THREE.PointLight(0xffffff, 0.8, 30);
-secretLight.position.set(SECRET_ROOM_X, 8, 0);
-secretRoomGroup.add(secretLight);
-const secretAmbient = new THREE.AmbientLight(0xffffff, 0.5);
-secretRoomGroup.add(secretAmbient);
-
-// Blue button on a pedestal
-const secretPedestal = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.8, 1.0, 3.0, 24),
-  new THREE.MeshLambertMaterial({ color: 0xcccccc })
-);
-secretPedestal.position.set(SECRET_ROOM_X, -8.5, 0);
-secretRoomGroup.add(secretPedestal);
-
-const secretBtnMesh = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.7, 0.7, 0.4, 24),
-  new THREE.MeshLambertMaterial({ color: 0x2244cc, emissive: 0x1133aa, emissiveIntensity: 0.5 })
-);
-secretBtnMesh.position.set(SECRET_ROOM_X, -6.85, 0);
-secretRoomGroup.add(secretBtnMesh);
-
-// Dome on top
-const secretDome = new THREE.Mesh(
-  new THREE.SphereGeometry(0.68, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
-  new THREE.MeshLambertMaterial({ color: 0x3366ff, emissive: 0x2244cc, emissiveIntensity: 0.4 })
-);
-secretDome.position.set(SECRET_ROOM_X, -6.65, 0);
-secretRoomGroup.add(secretDome);
-
-// Glow under the blue button
-const secretGlow = new THREE.PointLight(0x3366ff, 0.6, 8);
-secretGlow.position.set(SECRET_ROOM_X, -6.0, 0);
-secretRoomGroup.add(secretGlow);
-
-scene.add(secretRoomGroup);
-
-// Track whether player is in the secret room
-let inSecretRoom = false;
+function isNearRightWall() {
+  return camera.position.x > RIGHT_WALL_THRESHOLD && !rewardTriggered && !window._escapeActive;
+}
 
 // ─── Event Manager ───────────────────────────────────────────────────────────
 
@@ -217,20 +185,14 @@ function onMouseClick(event) {
     return;
   }
 
-  // Check secret room blue button
-  if (inSecretRoom) {
-    const blueHit = raycaster.intersectObjects([secretBtnMesh, secretDome], false);
-    if (blueHit.length > 0 && !window._escapeActive) {
-      rewardTriggered = true;
-      if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
-      if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
-      // Teleport back to main room for the escape sequence
-      camera.position.set(0, 0, 8);
-      window._camYaw = 0;
-      window._camPitch = -0.75;
-      startEscapeSequence(scene, camera);
-      return;
-    }
+  // Near right wall? Click to skip to escape ending
+  if (isNearRightWall()) {
+    rewardTriggered = true;
+    wallPromptEl.style.display = 'none';
+    if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
+    if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
+    startEscapeSequence(scene, camera);
+    return;
   }
 
   const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
@@ -424,22 +386,16 @@ function animate() {
     if (keys['ArrowLeft']  || keys['KeyA']) { camera.position.x -= rx * MOVE_SPEED; camera.position.z -= rz * MOVE_SPEED; }
   }
 
-  // Clamp inside the room(s)
-  // Right wall (x > 8.5): let player walk through into secret room
-  // Secret room spans x = 20 to 40 (centre at 30), z = ±8.5
-  if (camera.position.x > ROOM_LIMIT && camera.position.x < 20) {
-    // In the gap between rooms — keep pushing through
-    inSecretRoom = true;
-  } else if (camera.position.x >= 20) {
-    // Inside secret room — clamp to secret room bounds
-    inSecretRoom = true;
-    camera.position.x = Math.max(SECRET_ROOM_X - ROOM_LIMIT, Math.min(SECRET_ROOM_X + ROOM_LIMIT, camera.position.x));
-  } else {
-    // Main room
-    inSecretRoom = false;
-    camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
-  }
+  // Clamp inside the room
+  camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
   camera.position.z = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.z));
+
+  // Show prompt near the right wall
+  if (isNearRightWall() && pointerLocked) {
+    wallPromptEl.style.display = 'block';
+  } else {
+    wallPromptEl.style.display = 'none';
+  }
 
   // Subtle idle button glow pulse
   if (buttonObj.buttonGlow) {
