@@ -430,28 +430,18 @@ export async function startEscapeSequence(scene, camera) {
   vignette.style.transition = 'opacity 0.7s ease';
   vignette.style.opacity = '0';
 
-  const boxX = camera.position.x;
-  const boxZ = camera.position.z;
   const boxY = camera.position.y;
 
-  // Rise to standing height
-  await tween(700, t => {
+  // Smoothly rise to standing height
+  await tween(900, t => {
     camera.position.y = lerp(boxY, 0, easeInOut(t));
   });
 
-  await wait(200);
+  // Give the player full control — they run to the door themselves
+  window._camOverride = false;
+  window._movementLocked = false;
 
-  // ── Run toward the door ───────────────────────────────────────────────────
-  await tween(2400, t => {
-    const e = easeInOut(t);
-    camera.position.x = lerp(boxX, 0, e);
-    camera.position.z = lerp(boxZ, -9.0, e);
-    camera.rotation.x = lerp(0, -0.08, e);
-  });
-
-  await wait(400);
-
-  // ── Fade to white ────────────────────────────────────────────────────────
+  // Trigger ending when the player reaches near the door (z < -8)
   const whiteOut = document.createElement('div');
   whiteOut.style.cssText = `
     position:fixed;top:0;left:0;width:100%;height:100%;
@@ -459,6 +449,24 @@ export async function startEscapeSequence(scene, camera) {
     transition:opacity 3s ease;
   `;
   document.body.appendChild(whiteOut);
+
+  showDialogue('THE DOOR... GO!', 'timmy');
+
+  await new Promise(resolve => {
+    function checkDoor() {
+      if (camera.position.z < -8) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(checkDoor);
+    }
+    checkDoor();
+  });
+
+  clearDialogue();
+  window._movementLocked = true;
+
+  // Fade to white
   await wait(50);
   whiteOut.style.opacity = '1';
   vignette.remove();
