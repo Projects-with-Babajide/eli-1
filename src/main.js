@@ -44,26 +44,58 @@ createRoom(scene);
 
 const buttonObj = createButton(scene);
 
-// ─── Wall Skip Button (hidden shortcut to ending) ───────────────────────────
+// ─── Secret Room (through right wall) ────────────────────────────────────────
 
-const wallBtnGroup = new THREE.Group();
-// Small dark button on the right wall (x = +9.9)
-const wallBtnMesh = new THREE.Mesh(
-  new THREE.CylinderGeometry(0.25, 0.25, 0.06, 16),
-  new THREE.MeshLambertMaterial({ color: 0x2255cc, emissive: 0x1133aa })
+const SECRET_ROOM_X = 30; // centre of the secret room (20 units past the main room wall)
+const secretRoomGroup = new THREE.Group();
+
+// White box room (same size as main room)
+const secretRoomBox = new THREE.Mesh(
+  new THREE.BoxGeometry(20, 20, 20),
+  new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.BackSide })
 );
-wallBtnMesh.rotation.z = Math.PI / 2;
-wallBtnMesh.position.set(9.9, -5, -4);
-wallBtnGroup.add(wallBtnMesh);
-// Small ring around it
-const wallBtnRing = new THREE.Mesh(
-  new THREE.TorusGeometry(0.3, 0.03, 8, 24),
-  new THREE.MeshLambertMaterial({ color: 0x3366dd })
+secretRoomBox.position.set(SECRET_ROOM_X, 0, 0);
+secretRoomGroup.add(secretRoomBox);
+
+// Light inside the secret room
+const secretLight = new THREE.PointLight(0xffffff, 0.8, 30);
+secretLight.position.set(SECRET_ROOM_X, 8, 0);
+secretRoomGroup.add(secretLight);
+const secretAmbient = new THREE.AmbientLight(0xffffff, 0.5);
+secretRoomGroup.add(secretAmbient);
+
+// Blue button on a pedestal
+const secretPedestal = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.8, 1.0, 3.0, 24),
+  new THREE.MeshLambertMaterial({ color: 0xcccccc })
 );
-wallBtnRing.rotation.z = Math.PI / 2;
-wallBtnRing.position.copy(wallBtnMesh.position);
-wallBtnGroup.add(wallBtnRing);
-scene.add(wallBtnGroup);
+secretPedestal.position.set(SECRET_ROOM_X, -8.5, 0);
+secretRoomGroup.add(secretPedestal);
+
+const secretBtnMesh = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.7, 0.7, 0.4, 24),
+  new THREE.MeshLambertMaterial({ color: 0x2244cc, emissive: 0x1133aa, emissiveIntensity: 0.5 })
+);
+secretBtnMesh.position.set(SECRET_ROOM_X, -6.85, 0);
+secretRoomGroup.add(secretBtnMesh);
+
+// Dome on top
+const secretDome = new THREE.Mesh(
+  new THREE.SphereGeometry(0.68, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+  new THREE.MeshLambertMaterial({ color: 0x3366ff, emissive: 0x2244cc, emissiveIntensity: 0.4 })
+);
+secretDome.position.set(SECRET_ROOM_X, -6.65, 0);
+secretRoomGroup.add(secretDome);
+
+// Glow under the blue button
+const secretGlow = new THREE.PointLight(0x3366ff, 0.6, 8);
+secretGlow.position.set(SECRET_ROOM_X, -6.0, 0);
+secretRoomGroup.add(secretGlow);
+
+scene.add(secretRoomGroup);
+
+// Track whether player is in the secret room
+let inSecretRoom = false;
 
 // ─── Event Manager ───────────────────────────────────────────────────────────
 
@@ -185,16 +217,20 @@ function onMouseClick(event) {
     return;
   }
 
-  // Check wall skip button
-  const wallHit = raycaster.intersectObjects(wallBtnGroup.children, true);
-  if (wallHit.length > 0 && !window._escapeActive) {
-    rewardTriggered = true;
-    // Remove Timmy and banana if present
-    if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
-    if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
-    scene.remove(wallBtnGroup);
-    startEscapeSequence(scene, camera);
-    return;
+  // Check secret room blue button
+  if (inSecretRoom) {
+    const blueHit = raycaster.intersectObjects([secretBtnMesh, secretDome], false);
+    if (blueHit.length > 0 && !window._escapeActive) {
+      rewardTriggered = true;
+      if (window._timmyGroup) { scene.remove(window._timmyGroup); window._timmyGroup = null; }
+      if (window._bananaGroup) { scene.remove(window._bananaGroup); window._bananaGroup = null; }
+      // Teleport back to main room for the escape sequence
+      camera.position.set(0, 0, 8);
+      window._camYaw = 0;
+      window._camPitch = -0.75;
+      startEscapeSequence(scene, camera);
+      return;
+    }
   }
 
   const intersects = raycaster.intersectObjects(buttonObj.clickTargets, false);
@@ -388,8 +424,21 @@ function animate() {
     if (keys['ArrowLeft']  || keys['KeyA']) { camera.position.x -= rx * MOVE_SPEED; camera.position.z -= rz * MOVE_SPEED; }
   }
 
-  // Clamp inside the room
-  camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
+  // Clamp inside the room(s)
+  // Right wall (x > 8.5): let player walk through into secret room
+  // Secret room spans x = 20 to 40 (centre at 30), z = ±8.5
+  if (camera.position.x > ROOM_LIMIT && camera.position.x < 20) {
+    // In the gap between rooms — keep pushing through
+    inSecretRoom = true;
+  } else if (camera.position.x >= 20) {
+    // Inside secret room — clamp to secret room bounds
+    inSecretRoom = true;
+    camera.position.x = Math.max(SECRET_ROOM_X - ROOM_LIMIT, Math.min(SECRET_ROOM_X + ROOM_LIMIT, camera.position.x));
+  } else {
+    // Main room
+    inSecretRoom = false;
+    camera.position.x = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.x));
+  }
   camera.position.z = Math.max(-ROOM_LIMIT, Math.min(ROOM_LIMIT, camera.position.z));
 
   // Subtle idle button glow pulse
