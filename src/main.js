@@ -50,7 +50,7 @@ const wallBtnGroup = new THREE.Group();
 // Small dark button on the right wall (x = +9.9)
 const wallBtnMesh = new THREE.Mesh(
   new THREE.CylinderGeometry(0.25, 0.25, 0.06, 16),
-  new THREE.MeshLambertMaterial({ color: 0x333333, emissive: 0x111111 })
+  new THREE.MeshLambertMaterial({ color: 0x2255cc, emissive: 0x1133aa })
 );
 wallBtnMesh.rotation.z = Math.PI / 2;
 wallBtnMesh.position.set(9.9, -5, -4);
@@ -58,7 +58,7 @@ wallBtnGroup.add(wallBtnMesh);
 // Small ring around it
 const wallBtnRing = new THREE.Mesh(
   new THREE.TorusGeometry(0.3, 0.03, 8, 24),
-  new THREE.MeshLambertMaterial({ color: 0x555555 })
+  new THREE.MeshLambertMaterial({ color: 0x3366dd })
 );
 wallBtnRing.rotation.z = Math.PI / 2;
 wallBtnRing.position.copy(wallBtnMesh.position);
